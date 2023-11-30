@@ -41,12 +41,13 @@ export default createGlobalStyle`
   article, aside, canvas, details, embed,
   figure, figcaption, footer, header, hgroup,
   menu, nav, output, ruby, section, summary,
-  time, mark, audio, video, svg {
+  time, mark, audio, video, svg, button, input {
     margin: 0;
     padding: 0;
     border: 0;
     vertical-align: baseline;
-    text-decoration: none;
+    text-decoration: none; 
+    font-size:inherit;
     color:inherit;
 
   }

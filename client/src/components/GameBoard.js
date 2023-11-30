@@ -1,15 +1,18 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 
 import {styled,keyframes} from "styled-components"
 import scrollUrl from '../assets/scroll_bg.jpg';
 
 import { AppContext } from "./AppContext";  
-import CardObject from "./CardObject";
+import BoardCard from "./BoardCard";
 import { CiSun } from "react-icons/ci";
 import { GiMoon } from "react-icons/gi";
 import { BsStars } from "react-icons/bs";
 import CardTooltip from "./CardTooltip";
+import PlayableCard from "./PlayableCard";
+import {CARDFUNC} from "./game/cardfunctions.js";
 
+import {MainLands,MLAND} from "./utility/testdata.js";
 
 const funnyArray = [];
 for (let _i=0; _i < 64;_i++)
@@ -19,20 +22,100 @@ for (let _i=0; _i < 64;_i++)
 const GameBoard = () => {
 
     const {
-        actions: { contextDimensions, contextMouseOver, contextMouseStop, changeGamePhase},
-        state: { playerResources, boardGrid, targetGrid, windowWidth,windowHeight, 
+        actions: { contextDimensions, contextMouseOver, contextMouseStop, changeGamePhase,
+        setTargets, checkAdjacentSpaces,
+        setCard,
+        chooseCard, 
+        endTurnTrigger,
+        updatePoints,
+        opponentTurn, nextTurn,
+        
+        },
+        state: { playerResources, resourcesPlus,
+            boardGrid, targetGrid, windowWidth,windowHeight, 
             cardWidth, cardHeight, mouseOver, mousingOver,boardWidth,boardHeight, 
+            localPlayer,
+            currentPlayer,
             playerColor,
             gamePhase,
             gamePhaseStep,
+            currentCard,  
+            currentTurn, maxTurns,
         },
     } = useContext(AppContext);
 
 
+    useEffect(
+        ()=>{
+            if (gamePhase === 0 && currentCard != null)
+            { 
+              setTargets(checkAdjacentSpaces());
+            }
+            else
+            {
+                setTargets([]);
+            }
+        }
+        ,[currentCard])
+
+
+    useEffect( ///for end turn stuff
+    ()=>{
+        if (gamePhase === 1)
+        {
+            if (gamePhaseStep === 0)
+            {
+                opponentTurn();
+                const _updateScore = setTimeout(()=>{  
+                    endTurnTrigger();
+
+                    const _updateScore2 = setTimeout(()=>{ 
+                        nextTurn();
+                    },1000);
+
+                }
+                    ,1000);
+                changeGamePhase([1,1]);
+                
+            }
+        }
+    }
+    ,[gamePhase,gamePhaseStep])
+
+
+    const HandlePlacement = (targetX,targetY) => { 
+        if (gamePhase === 0 && gamePhaseStep === 1)
+        {
+            setCard({card:currentCard,posX:targetX,posY:targetY});
+            chooseCard({card:null});
+            changeGamePhase([1,0]);
+        }
+    }
+
     return (
         <MainGameDiv>
             <ResourceDisplay>
-               <span style={{filter:"drop-shadow(1px 0px 10px rgba(255,255,0,0.5)) drop-shadow(0px 0px 5px #ff7700)"}} ><span></span><CiSun color={"yellow"}/>Sun : {playerResources[0][0]}</span> <span  style={{filter:"drop-shadow(1px 0px 10px rgba(255,255,0,0.5)) drop-shadow(0px 0px 5px #00ffff)"}}><GiMoon/>Moon:  {playerResources[0][1]}</span> <span style={{filter:"drop-shadow(1px 0px 10px rgba(255,0,255,0.6)) drop-shadow(0px 0px 8px #ffffff)"}}> <BsStars color={"aqua"}/>Stars:  {playerResources[0][2]}</span>
+            {gamePhase === 5 && (<>
+                <span>Game Over</span>
+            </>) }
+            {gamePhase < 5 && (<>
+                <span>Turn {currentTurn}/{maxTurns}</span>
+            </>) }
+               <span style={{ filter:"drop-shadow(1px 0px 10px rgba(255,255,0,0.5)) drop-shadow(0px 0px 5px #ff7700)"}} ><span></span>
+               <CiSun color={"yellow"}/>Sun : {playerResources[localPlayer-1][0]}
+               { (gamePhase === 1 && gamePhaseStep === 1) && 
+               ( <span> + {resourcesPlus[localPlayer-1][0]}</span>
+               ) }</span>  
+               <span  style={{filter:"drop-shadow(1px 0px 10px rgba(255,255,0,0.5)) drop-shadow(0px 0px 5px #00ffff)"}}>
+                <GiMoon/>Moon:  {playerResources[localPlayer-1][1]}
+                { (gamePhase === 1 && gamePhaseStep === 1) && 
+               ( <span> + {resourcesPlus[localPlayer-1][1]}</span>
+               ) }</span> 
+                <span style={{filter:"drop-shadow(1px 0px 10px rgba(255,0,255,0.6)) drop-shadow(0px 0px 8px #ffffff)"}}>
+              <BsStars color={"aqua"}/>Stars:  {playerResources[localPlayer-1][2]}
+              { (gamePhase === 1 && gamePhaseStep === 1) && 
+               ( <span> + {resourcesPlus[localPlayer-1][2]}</span>
+               ) }</span>
             </ResourceDisplay>
 
             <Separator/>
@@ -41,7 +124,16 @@ const GameBoard = () => {
                 <BoardContain> 
                     
                  <Separator/>
-                    
+                    {gamePhase === 5 && (
+                        <>
+                        <TurnEnder>GAME OVER</TurnEnder> 
+                        </>
+                    )}
+                    {gamePhase === 1 && (
+                        <>
+                        <TurnEnder>TURN IS ENDING</TurnEnder>
+                        </>
+                    )}
                     <BoardGrid style={{minWidth:`${boardWidth}px`,maxWidth:`${boardWidth}px`,maxHeight:`${boardHeight}px`}}>
                     <BoardGridOutline style={{minWidth:`${boardWidth}px`,height:`${boardHeight-3}px`}} />
                     
@@ -51,7 +143,7 @@ const GameBoard = () => {
                                 {
                                     let _hidden = `visible`
                                     let _color = "none";
-                                    if (boardGrid[indexX][_y] === null)
+                                    if (boardGrid[indexX][_y].cardId === null)
                                     { 
                                         _hidden = `hidden`
                                     }
@@ -61,12 +153,17 @@ const GameBoard = () => {
                                     }
                                         
                                         _xArray.push(
-                                            <>
+                                            <div key={"divvy"+String(indexX)+"-"+String(_y)}> 
                                                 {targetGrid[indexX][_y] != null &&( 
-                                                <PlacementIndicator key={"placement"+String(indexX)+"-"+String(_y)} style={{width:`${cardWidth-1}px`,height:`${cardHeight-1}px`,left:`${indexX*cardWidth+2}px`,top:`${_y*cardHeight+4}px`}}>
+                                                <PlacementIndicator key={"placement"+String(indexX)+"-"+String(_y)} style={{width:`${cardWidth-1}px`,height:`${cardHeight-1}px`,left:`${indexX*cardWidth+2}px`,top:`${_y*cardHeight+4}px`}}
+                                                onClick={
+                                                    ()=>{HandlePlacement(indexX,_y)}
+                                                }
+                                                >
                                                     <span style={{filter:"drop-shadow(1px 0 4px #000000)"}}>!! <GiMoon/> Moon:  <span style={{color:"yellow"}}>{playerResources[0][1]}</span></span>
-                                                </PlacementIndicator> 
+                                                </PlacementIndicator>  
                                                 ) }
+
                                                 <TempCard key={String(indexX)+"-"+String(_y)} 
                                                     onMouseOver={()=>{
                                                         contextMouseOver([indexX,_y]); 
@@ -83,12 +180,12 @@ const GameBoard = () => {
                                                 { (mouseOver[0] == indexX && mouseOver[1] === _y) &&( 
                                                     <CardTooltip key={`tt`+String(indexX)+"-"+String(_y)}/> 
                                                 )}
-                                                    <CardObject key={`card`+String(indexX)+"-"+String(_y)}  posX={indexX} posY={_y} />
+                                                    <BoardCard key={`card`+String(indexX)+"-"+String(_y)} cardObj={boardGrid[indexX][_y]} posX={indexX} posY={_y} />
                                                 
                                                 <Insetter key={`inset`+String(indexX)+"-"+String(_y)}
                                                 style={{boxShadow:`${_color} 0px 0px 4px 4px inset`}}/> 
-                                                </TempCard>
-                                            </>
+                                                </TempCard> 
+                                            </div>
                                         );
                                 }
                                 return  _xArray;
@@ -106,13 +203,23 @@ const GameBoard = () => {
 
             <Separator/>
 
-                <PlayerHand 
-            onClick={()=>{ changeGamePhase(1);  }}  {...( gamePhase === 1 ?{className:"hidehand"}:{})}  >  
+                <PlayerHand   {...( gamePhase === 1 ?{className:"hidehand"}:{})}  >  
                     <PlayerHandBG />
                     <PlayerHandTitle>  
                         Hand
                     </PlayerHandTitle>
-                    <PlayableCard />
+                    
+                    <PlayableCard
+                    cardObj={{
+                        ...MainLands[MLAND.desert],
+                        player:currentPlayer,
+                        cardId:1,
+                        name:"desert",
+                        type:"land",
+                        color:"",
+                        desc:"",
+                    }}
+                    /> 
 
                 </PlayerHand>
         </MainGameDiv>
@@ -149,8 +256,7 @@ const PlacementHoverAnim = keyframes`
     background-color: rgba(128,0,255,0.1);} 
   `
 
-const PlacementIndicator = styled.div`
-visibility: hidden;
+const PlacementIndicator = styled.div` 
 padding:5px;
 font-weight:bold;
 color:white;
@@ -168,13 +274,25 @@ box-shadow: rgba(255, 255, 255,0.8) 0px 0px 0px 3px;
 border-radius: 10px;
 animation: ${PlacementAnim} 5s infinite;
 &:hover{
+    z-index: 20;
     transition: all 100ms ease-out;
     transform: scale(1.2);
     animation: ${PlacementHoverAnim} 5s infinite; 
 }
 `
 
-
+const TurnEnder = styled.div`
+    background-color: rgba(20,20,60,0.1);
+    border-radius: 50px;
+    font-family: warlocks-ale;
+    margin-top:4%;
+    position: absolute;
+    text-align: center;
+    width:100%;
+    font-size: 150px;
+    color:white;
+    z-index: 100;
+`
 
 const ResourceDisplay = styled.div` 
 padding: 15px 15px 15px 15%;
@@ -268,11 +386,7 @@ z-index: 5;
 const BoardBorderAnim = keyframes`   
 
 ` 
-
-const PlayableCard = styled.div`
-
-
-`
+ 
 
 
 const PlayerHand = styled.div` 
@@ -316,8 +430,7 @@ position: relative;
 
 font-size: 15vh;  
 min-width: 100%;
-z-index: 50;
-  
+z-index: 50; 
 animation: ${handTitleAnim} 5s infinite;
 filter: drop-shadow(2px 0 0 #ffffff) drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff) drop-shadow(0 -2px 0 #ffffff);  
 `

@@ -1,5 +1,6 @@
 //functionality section
 import { useEffect, useContext } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import {styled, keyframes} from 'styled-components';
 //utilities section
 import GlobalStyles from './GlobalStyles';
@@ -7,6 +8,7 @@ import col from './utility/colors';
 //components section
 import Navbar from './Navbar';
 import GameBoard from './GameBoard';
+import CardMaker from './CardMaker';
 import { AppContext } from './AppContext';
  
 import starUrl from '../assets/star_background.png';
@@ -34,16 +36,24 @@ function App() {
     
     <>
     <GlobalStyles/> 
-    <MainAppDiv   style={{minHeight: `${windowHeight}px`,minWidth: `${windowWidth}px`}}>
-      <Navbar />
-        <div>
-      <StarBackground>
-      </StarBackground>
-          <GameBoard/>
-        </div>
-        
-    </MainAppDiv>
-    
+    <Router>
+      <MainAppDiv   style={{minHeight: `${windowHeight}px`,minWidth: `${windowWidth}px`}}>
+        <Navbar />
+        <Routes>
+        <Route path="/" element={
+            <div> 
+          <StarBackground>
+          </StarBackground>
+              <GameBoard/>
+            </div>
+          }/>
+          <Route path="/cardMake" element={
+            <CardMaker/>
+          }/>
+          
+        </Routes>
+      </MainAppDiv>
+    </Router>
     </> 
   ); 
 
