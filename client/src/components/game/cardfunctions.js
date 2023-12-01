@@ -128,6 +128,8 @@ const function2 = () =>{
     
 }
 
+
+
 const CARDFUNC = {
     TRIGGER:cardTriggers,
 

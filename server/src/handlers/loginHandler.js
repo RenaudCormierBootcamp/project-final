@@ -3,9 +3,7 @@ const bcrypt = require('bcrypt');
 require("dotenv").config();  
 
 const { MONGO_URI } = process.env;  
-const options = {  
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+const options = {   
 }; 
 
 const loginHandler = async (req, res) => {
@@ -21,15 +19,14 @@ const loginHandler = async (req, res) => {
         if (_checkEmailUser != null)
         {
             const _passwordCheck = await bcrypt.compare(userInfo.password,_checkEmailUser.password); 
-            console.log(_passwordCheck);
-            if (_passwordCheck)
+             if (_passwordCheck)
             {
-                const _numero = Math.floor(Math.random()*99);
+                const _numero = Math.floor(Math.random()*999999);
                 const _hashEmail = await bcrypt.hash("banana"+String(_numero)+_checkEmailUser.email,10); 
                 await collection.updateOne({ username: _checkEmailUser.username }, { $set: { numero: _numero } });
                 const _cookieSession = _checkEmailUser.username+"_"+_hashEmail;
                 res.cookie('session', _cookieSession, 
-                { httpOnly:true } );
+                { httpOnly:true,sameSite:"Strict" } );
                 res.status(200).json({message:"logged in!",body:{username:_checkEmailUser.username}});
             }
             else
@@ -47,10 +44,10 @@ const loginHandler = async (req, res) => {
                 const _hashEmail = await bcrypt.hash("banana"+String(_numero)+_checkUsernameUser.email,10); 
                 const _cookieSession = _checkUsernameUser.username+"_"+_hashEmail;
                 await collection.updateOne({ username: _checkUsernameUser.username }, { $set: { numero: _numero } });
-                console.log("hash email ",_hashEmail);
+               
                 
                 res.cookie('session', _cookieSession, 
-                { httpOnly:true } );
+                { httpOnly:true,sameSite:"Strict" } );
                 res.status(200).json({message:"logged in!",body:{username:_checkUsernameUser.username}});
             }
             else

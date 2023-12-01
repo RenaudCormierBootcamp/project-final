@@ -3,9 +3,7 @@ const bcrypt = require('bcrypt');
 require("dotenv").config();  
 
 const { MONGO_URI } = process.env;  
-const options = {  
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+const options = {   
 };
 
 
@@ -35,7 +33,7 @@ const createUser = async (req, res) => {
         }
         else
         {
-            const _numero = Math.floor(Math.random()*99);
+            const _numero = Math.floor(Math.random()*999999);
             const _hashPassword = await bcrypt.hash(userInfo.password,10);  
             const _hashEmail = await bcrypt.hash("banana"+String(_numero)+userInfo.email,10); 
             userInfo.numero =_numero;
@@ -45,15 +43,14 @@ const createUser = async (req, res) => {
             userInfo.createdPacks = [];
             userInfo.currentSaveGame = { game:null };
             userInfo.userLevel = 0;
-            userInfo.gamerRank = 0;
-            userInfo.session = _hashEmail;
+            userInfo.gamerRank = 0; 
              
             let _cookieSession = userInfo.username+"_"+_hashEmail;
              
             const _newUser = await db.collection("users").insertOne(userInfo);
               
             res.cookie('session', _cookieSession, 
-                { httpOnly:true }
+                { httpOnly:true,sameSite:"Strict" }
             ); 
             res.status(200).json({ message: "user created hurrah"});
              

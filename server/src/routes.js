@@ -4,14 +4,16 @@ const router = express.Router();
 const loginHandler = require('./handlers/loginHandler');
 const createUser = require('./handlers/createUser');
 const autoLoginHandler = require('./handlers/autoLoginHandler');
+const logoutHandler = require('./handlers/logoutHandler')
 
 router.use(express.json()); 
 
 router.post('/login', loginHandler);  
+router.get('/logout', logoutHandler); 
 router.get('/autologin', autoLoginHandler);  
 router.post('/register', createUser); 
 
-
+ 
 
 router.all("*", (req, res) => {
     res.status(404).json({

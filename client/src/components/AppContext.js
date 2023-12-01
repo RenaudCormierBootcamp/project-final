@@ -1,7 +1,7 @@
 import { createContext,useReducer } from "react";  
 import {CARDFUNC} from "./game/cardfunctions.js"; 
 
-import {MainLands,MLAND} from "./utility/testdata.js";
+import {MainLands,MLAND,shapeData} from "./utility/testdata.js";
 
 const {TRIGGER} = CARDFUNC;
 
@@ -122,7 +122,8 @@ const reducer = (state, action) => {
       const _tempGrid = state.boardGrid.slice();
       action.data.card.posX = action.data.posX;
       action.data.card.posY = action.data.posY;
-      _tempGrid[action.data.posX][action.data.posY] = action.data.card
+      _tempGrid[action.data.posX][action.data.posY] = action.data.card;
+
       return {
         ...state,    
         boardGrid:_tempGrid,
@@ -235,6 +236,188 @@ const reducer = (state, action) => {
       }
     }
 
+    case 'add-requirement': {
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+      _editedCard.requirements.push({type:"none",value:[]});
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'delete-requirement': {
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+      _editedCard.requirements.splice(action.data,1);
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'reset-requirements': {
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+      _editedCard.requirements = [{type:"none"}]
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+
+    case 'set-requirement-type': {
+      const _req = state.currentEditCard.requirements[action.data.req];
+      _req.type = action.data.value;
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+      console.log("cardo ",_editedCard);
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'set-pattern-stat': { 
+     
+      const _pattern = state.currentEditCard.patterns[action.data.pattern]; 
+      _pattern[action.data.key] = action.data.value; 
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'set-shape-stat': { 
+     
+      const _pattern = state.currentEditCard.patterns[action.data.pattern]; 
+      const _shape = _pattern.shapes[action.data.shape]; 
+      _shape[action.data.key] = action.data.value; 
+
+      if (action.data.key === "type")
+      {
+        let _newArray = []
+        while (_newArray.length < shapeData[action.data.value].sizes)
+        {
+          _newArray.push(0);
+        }
+        _shape.size =  _newArray;
+      }
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'set-shape-size': { 
+     
+      const _pattern = state.currentEditCard.patterns[action.data.pattern]; 
+      const _shape = _pattern.shapes[action.data.shape]; 
+      _shape.size[action.data.size] = action.data.value; 
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
+    case 'add-pattern':{
+      const _patterns = state.currentEditCard.patterns;
+      _patterns.push({
+        color:"#777777",
+        offX: 0.00,
+        offY: 0.00,
+        width: 1.0,
+        height: 1.0,
+        skew:0, 
+        shapes: []
+      })
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard: _editedCard,
+      }
+    }
+
+    case 'delete-pattern':{
+      const _patterns = state.currentEditCard.patterns;
+      _patterns.splice(action.data.pattern,1);
+
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard: _editedCard,
+      }
+    }
+
+    case 'add-shape':{
+      const _pattern = state.currentEditCard.patterns[action.data.pattern];
+      const _keys = Object.keys(shapeData);
+      let _sizeArray = [];
+      for (let _i =0; _i < shapeData[_keys[0]].sizes; _i++)
+      {
+        _sizeArray.push(0.1);
+      } 
+
+      _pattern.shapes.push({
+        type: shapeData[_keys[0]].name,
+        size: _sizeArray,
+        offX: 0,
+        offY: 0,
+
+      })
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard: _editedCard,
+      }
+    }
+
+    case 'delete-shape':{ 
+      const _pattern = state.currentEditCard.patterns[action.data.pattern];
+      _pattern.shapes.splice(action.data.shape, 1);
+      const _editedCard = {
+        ...state.currentEditCard,
+      };
+
+      return {
+        ...state,
+        currentEditCard: _editedCard,
+      }
+    }
+
     case 'update-points': {
 
       const _tempArray = state.playerResources.slice().map(_i=>_i.slice()); 
@@ -252,6 +435,8 @@ const reducer = (state, action) => {
         resourcesPlus: [[0,0,0],[0,0,0]],
       }
     }
+
+    ///-------------------------------server interaction reducers
 
     case 'new-register': {
       const _userInfo = {
@@ -273,6 +458,14 @@ const reducer = (state, action) => {
       }
     }
 
+    case 'logout': { 
+      
+      return {
+        ...state,
+        userInfo:{username:null},
+      }
+    }
+
 
     default: throw new Error(`Unrecognized action: ${action.type}`); ;
   }
@@ -281,7 +474,13 @@ const reducer = (state, action) => {
 }
 ////REDUCERS END
 ////////////////------------------------------------------------------------------------------------
+
+
+
+///--------------------------------
+
 export const AppProvider = ({ children }) => {
+
     const [state, dispatch] = useReducer(reducer, initialState);
 
     
@@ -473,6 +672,102 @@ export const AppProvider = ({ children }) => {
 
     }
 
+    const setPatternStat = (data) =>{
+
+      dispatch({
+        type:"set-pattern-stat",
+        data:data,
+      })
+
+    }
+
+    const setShapeStat = (data) =>{
+
+      dispatch({
+        type:"set-shape-stat",
+        data:data,
+      })
+
+    }
+
+    const setShapeSize = (data) =>{
+
+      dispatch({
+        type:"set-shape-size",
+        data:data,
+      })
+
+    }
+
+    const deleteShape = (data) =>{
+      dispatch({
+        type:"delete-shape",
+        data:data,
+      })
+
+    }
+
+    const addShape = (data) =>{
+      dispatch({
+        type:"add-shape",
+        data:data,
+      })
+
+    }
+
+    const deletePattern = (data) =>{
+      dispatch({
+        type:"delete-pattern",
+        data:data,
+      })
+
+    }
+
+    const addPattern = (data) =>{
+      dispatch({
+        type:"add-pattern",
+        data:{},
+      })
+
+    } 
+
+    const addRequirement = (data) =>{
+      dispatch({
+        type:"add-requirement",
+        data:data,
+      })
+    }
+
+    const deleteRequirement = (data) =>{
+      dispatch({
+        type:"delete-requirement",
+        data:data,
+      })
+    }
+
+    const resetRequirements = (data) =>{
+      dispatch({
+        type:"reset-requirements",
+        data:data,
+      })
+    }
+
+    
+    
+    const setRequirementType =(data) =>{
+      dispatch({
+        type:"set-requirement-type",
+        data:data,
+      })
+    }
+
+    const setRequirementValue =(data) =>{
+      dispatch({
+        type:"set-requirement-value",
+        data:data,
+      })
+    }
+
     const opponentTurn = (data) => {
         const _possibleTargets = checkAdjacentSpaces();
         let _rando = Math.floor(Math.random()*_possibleTargets.length); 
@@ -494,7 +789,7 @@ export const AppProvider = ({ children }) => {
     ///-------------------------------------------------------------------------------------------////
 
     const newRegister = async (data) => {
-            console.log("HELLO")
+            console.log("HELLO");
             let _status = "";
               fetch('/register',
               {
@@ -586,14 +881,14 @@ export const AppProvider = ({ children }) => {
         })
         .then((res) => {  
            
-          if (_status < 300)
+          if (_status === 200)
           { 
             dispatch({
               type: "attempt-login",
               data: res.body,
               }) 
           }
-          else
+          else if (_status >= 300)
           {
             alert(res.message);
           }
@@ -607,11 +902,47 @@ export const AppProvider = ({ children }) => {
 
     } 
 
+    const logOut = async (data) =>{
+      let _status = "";
+      fetch('/logout',
+        {
+            method: "GET",  
+            headers: {
+                "Content-Type":"application/json",
+              },
+        })
+        .then((res)  =>{  
+            _status = res.status;
+            return res.json(); 
+        })
+        .then((res) => {   
+            if (_status === 200)
+            {  
 
+            }
+            else if (_status >= 300)
+            {
+              console.log(res.message);
+            } 
+            dispatch({
+              type: "logout",
+              data: {},
+              }) 
+        })
+      .catch((error)=>{
+        console.log(error);  
+        })
+
+      
+    } 
+
+    ///bookmarkReturn
     return (
         <AppContext.Provider
           value={{
-            state,
+
+            state, 
+            
             actions: {  
               contextDimensions,
               setCard,
@@ -631,14 +962,29 @@ export const AppProvider = ({ children }) => {
               opponentTurn,
 
               nextTurn,
-
+              //---- card editor etc --
               setEditCard,
+              //functional
+              setRequirementType,
+              setRequirementValue,
+              addRequirement,
+              deleteRequirement,
+              resetRequirements,
+              //visual
+              setPatternStat,
+              setShapeStat,
+              setShapeSize,
+              addPattern,
+              deletePattern,
+              addShape,
+              deleteShape,
 
               //---- server etc -----
                   
               newRegister, 
               attemptLogin,
               attemptAutoCookieLogin,
+              logOut,
                  
             },
           }}

@@ -12,157 +12,110 @@ const BoardCard = ({cardObj,posX,posY}) => {
         state: { boardGrid, mouseOver },
     } = useContext(AppContext);
 
-
+    const [bigPattern,setBigPattern] = useState([]);
     const [color,setColor] = useState(`rgba(255,255,255,0)`); 
+    const [loadCard,setLoadCard] = useState(false);
 
     useEffect(
         ()=>{ 
             setColor(cardObj.backColor);
+            console.log("DOG");
+            
             //setColor(`rgb(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)})`);
         }
         ,[])
+
+    useEffect(
+        ()=>{
+            if (cardObj.cardId != null)
+            {
+                setBigPattern(cardPatternCreate()) 
+            } 
+        }
+        ,[cardObj]
+    )
  
-
-    const rectanglePattern = (name,color,width=0.15,height=0.05,tileX=0,tileY=0) =>{
         
-        return (                    
-            <rect fill={`${color}`} id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} width={width} height={height} x={tileX} y={tileY}  />
-        )
-    }
-
-    const circlePattern = (name,color,radius=0.15,cx=0.2,cy=0.2,tileX=0,tileY=0) =>{
-        
-        return (                    
-            <circle fill={`${color}`} id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} r={radius} cx={cx} cy={cy} x={tileX} y={tileY}  />
-        )
-    }
-
-    const trianglePattern = (name,color,pointA1,pointA2,pointB1,pointB2,pointC1,pointC2,tileX,tileY) =>{
-        
-        return (                   
-            <polygon points={`${pointA1},${pointA2} ${pointB1},${pointB2} ${pointC1},${pointC2}`} x={tileX} y={tileY} id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} fill={`${color}`} />  
-        )
-    }
-
-    const cardPatternCreate = (color="ffffff",name="main",shape="rectangle",patternX=0,patternY=0.05,patternW=0.6,patternH=0.1,) =>{
-
-        const _array = [];
-        const _subArray = [];
-        switch(cardObj.mainPatternShape)
-        {
-            case "rectangle":
-                _array.push( 
-                    rectanglePattern("main",cardObj.mainColor,cardObj.mainPatternParam1,cardObj.mainPatternParam2,cardObj.mainPatternParam3,cardObj.mainPatternParam4)   )
-            break;
-            case "circle":
-                _array.push(
-                    circlePattern("main",cardObj.mainColor,cardObj.mainPatternParam1,cardObj.mainPatternParam2,cardObj.mainPatternParam3,cardObj.mainPatternParam4,cardObj.mainPatternParam5)   )
-            break;
-            case "triangle":
-                _array.push(
-                    trianglePattern("main",cardObj.mainColor,cardObj.mainPatternParam1,cardObj.mainPatternParam2,cardObj.mainPatternParam3,cardObj.mainPatternParam4,cardObj.mainPatternParam5,cardObj.mainPatternParam6,cardObj.mainPatternParam7,cardObj.mainPatternParam8)   )
-            break;
-                    
-        }
-
-        switch(cardObj.mainPatternSubShape)
-        {
-            case "rectangle":
-                _array.push( 
-                    rectanglePattern("mainsub",cardObj.mainColor,cardObj.mainPatternSubParam1,cardObj.mainPatternSubParam2,cardObj.mainPatternSubParam3,cardObj.mainPatternSubParam4)   )
-                break;
-                case "circle":
-                    _array.push(circlePattern("mainsub",cardObj.mainColor,cardObj.mainPatternSubParam1,cardObj.mainPatternSubParam2,cardObj.mainPatternSubParam3,cardObj.mainPatternSubParam4)   )
-                break; 
-                case "triangle":
-                _array.push(
-                    trianglePattern("main",cardObj.mainColor,cardObj.mainPatternSubParam1,cardObj.mainPatternSubParam2,cardObj.mainPatternSubParam3,cardObj.mainPatternSubParam4,cardObj.mainPatternSubParam5,cardObj.mainPatternSubParam6,cardObj.mainPatternSubParam7,cardObj.mainPatternSubParam8)   )
-            break;
-                
-                case "none": break;
-        } 
-
-        if (cardObj.subPatternShape != "none")
-        {
-                switch(cardObj.subPatternShape)
-            {
-                case "rectangle":
-                    _subArray.push( 
-                        rectanglePattern("sub",cardObj.subColor,cardObj.subPatternParam1,cardObj.subPatternParam2,cardObj.subPatternParam3,cardObj.subPatternParam4)   )
-                break;
-                case "circle":
-                    _subArray.push(
-                        circlePattern("sub",cardObj.subColor,cardObj.subPatternParam1,cardObj.subPatternParam2,cardObj.subPatternParam3,cardObj.subPatternParam4,cardObj.subPatternParam5)   )
-                break;
-                case "triangle":
-                    _subArray.push(
-                        trianglePattern("sub",cardObj.subColor,cardObj.subPatternParam1,cardObj.subPatternParam2,cardObj.subPatternParam3,cardObj.subPatternParam4,cardObj.subPatternParam5,cardObj.subPatternParam6,cardObj.subPatternParam7,cardObj.subPatternParam8)   )
-                break;
-                        
-            }
-        }
-        if (cardObj.subPatternSubShape != "none")
-        {
-                switch(cardObj.subPatternShape)
-            {
-                case "rectangle":
-                    _subArray.push( 
-                        rectanglePattern("sub",cardObj.subColor,cardObj.subPatternSubParam1,cardObj.subPatternSubParam2,cardObj.subPatternSubParam3,cardObj.subPatternSubParam4)   )
-                break;
-                case "circle":
-                    _subArray.push(
-                        circlePattern("sub",cardObj.subColor,cardObj.subPatternSubParam1,cardObj.subPatternSubParam2,cardObj.subPatternSubParam3,cardObj.subPatternSubParam4,cardObj.subPatternSubParam5)   )
-                break;
-                case "triangle":
-                    _subArray.push(
-                        trianglePattern("sub",cardObj.subColor,cardObj.subPatternSubParam1,cardObj.subPatternSubParam2,cardObj.subPatternSubParam3,cardObj.subPatternSubParam4,cardObj.subPatternSubParam5,cardObj.subPatternSubParam6,cardObj.subPatternSubParam7,cardObj.subPatternSubParam8)   )
-                break;
-                        
-            }
-        }
-
+    const createPattern = (name,offX,offY,width,height,skew,_array) => {
         return (
-        <>
-        <svg style={{position:"absolute",textAlign:"left"}} id={`cardPattern-${name}-`+String(posX)+`,`+String(posY)}   width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <svg style={{position:"absolute",textAlign:"left"}} key={`cardPattern-${name}-`+String(posX)+`,`+String(posY)} id={`cardPattern-${name}-`+String(posX)+`,`+String(posY)}   width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
         <pattern id={`pattern-${name}-`+String(posX)+`,`+String(posY)}
-                x={`${cardObj.mainPatternX}`}
-                y={`${cardObj.mainPatternY}`}
-                width={`${cardObj.mainPatternW}`}
-                height={`${cardObj.mainPatternH}`}
+                x={`${offX}`}
+                y={`${offY}`}
+                width={`${width}`}
+                height={`${height}`}
                 patternUnits="objectBoundingBox"
                 patternContentUnits="objectBoundingBox"
-                patternTransform=" 
-                skewX(40) ">
+                patternTransform={`skewX(${skew})`}>
                 {_array} 
                  
         </pattern>
         
         <rect id={`rect`+String(posX)+`,`+String(posY)} x="0" y="0" width="100%" height="100%" fill={`url(#pattern-${name}-${String(posX)+`,`+String(posY)})`} />
-    </svg> 
-            
-     {cardObj.subPatternShape != "none" && (
-                   <svg style={{position:"absolute",textAlign:"left"}} id={`cardPattern-${"second"}-`+String(posX)+`,`+String(posY)}   width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                   <pattern id={`pattern-${"second"}-`+String(posX)+`,`+String(posY)}
-                           x={`${cardObj.subPatternX}`}
-                           y={`${cardObj.subPatternY}`}
-                           width={`${cardObj.subPatternW}`}
-                           height={`${cardObj.subPatternH}`}
-                           patternUnits="objectBoundingBox"
-                           patternContentUnits="objectBoundingBox"
-                           patternTransform="
-                           skewX(30) ">
-                            
-                           
-                           {_subArray} 
-                            
-                   </pattern>
-                   
-                   <rect id={`rect`+String(posX)+`,`+String(posY)} x="0" y="0" width="100%" height="100%" fill={`url(#pattern-${"second"}-${String(posX)+`,`+String(posY)})`} />
-               </svg> 
-                )}
+        </svg> )
+    }
     
-    </>
-    ) 
+    const rectanglePattern = (name,color,shapeObj) =>{
+        
+        return (                    
+            <rect fill={`${color}`} key={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} 
+            id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} 
+            width={shapeObj.size[0]} height={shapeObj.size[1]} x={shapeObj.offX} y={shapeObj.offY}  />
+        )
+    }
+
+    const circlePattern = (name,color,shapeObj) =>{
+        
+        return (                    
+            <circle fill={`${color}`} key={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} 
+            r={shapeObj.size[0]} cx={shapeObj.offX} cy={shapeObj.offY}   />
+        )
+    }
+
+    const trianglePattern = (name,color,shapeObj) =>{
+        
+        return (                   
+            <polygon points={`${shapeObj.size[0]},${shapeObj.size[1]} ${shapeObj.size[2]},${shapeObj.size[3]} ${shapeObj.size[4]},${shapeObj.size[5]}`} 
+            x={shapeObj.offX} y={shapeObj.offY} 
+            key={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} id={`pattern-${name}-elem`+String(posX)+`,`+String(posY)} fill={`${color}`} />  
+        )
+    }
+
+    const cardPatternCreate = () =>{
+        
+        const _arrayOfArrays = [];
+        for (let _i = 0; _i < cardObj.patterns.length; _i++)
+        {
+            const _smallArray = []; 
+            const _pattern = cardObj.patterns[_i];
+            for (let _j = 0; _j < _pattern.shapes.length; _j++)
+            {
+                const _shape = _pattern.shapes[_j];
+                switch(_shape.type)
+                {
+                    case "rectangle":
+                        _smallArray.push( 
+                            rectanglePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                    break;
+                    case "circle":
+                        _smallArray.push(
+                            circlePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                    break;
+                    case "triangle":
+                        _smallArray.push(
+                            trianglePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                    break;
+                }
+            }
+            console.log("pattern "+String(_i),"xoff "+String(_pattern.offX),"width "+String(_pattern.width));
+            _arrayOfArrays.push(createPattern(`-pattern-${_i}-`,_pattern.offX,_pattern.offY,_pattern.width,_pattern.height,_pattern.skew,_smallArray));
+        } 
+
+        return (
+            <>
+                {_arrayOfArrays}
+            </>
+        ) 
     }
 
     return (
@@ -170,12 +123,7 @@ const BoardCard = ({cardObj,posX,posY}) => {
             { cardObj.cardId != null &&
             ( 
              <CardContain id="contain" style={{backgroundColor:`${cardObj.backColor}`}}>     
-                {cardPatternCreate()}
-                {cardObj.subPatternShape != "none" && (
-                    <>
-                    
-                    </>
-                )}
+                 {bigPattern} 
              </CardContain>
             )
             }

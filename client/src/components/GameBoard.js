@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "react";
 
 import {styled,keyframes} from "styled-components"
-import scrollUrl from '../assets/scroll_bg.jpg';
+import scrollUrl from '../assets/scroll_bg.jpg'; 
 
 import { AppContext } from "./AppContext";  
 import BoardCard from "./BoardCard";

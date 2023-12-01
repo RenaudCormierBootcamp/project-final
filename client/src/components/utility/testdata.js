@@ -18,6 +18,62 @@ const patterns = {
   </svg>`,
 }
 
+const shapeData = { 
+    circle: {
+        name:"circle",
+        sizes:1,
+        sizeNames:["radius"],
+    },
+    rectangle: {
+        name:"rectangle",
+        sizes:2,
+        sizeNames:["width","height"],
+    },
+    triangle: {
+        name:"triangle",
+        sizes:6,
+        sizeNames:["point1x","point1y","point2x","point2y","point3x","point3y"],
+    },
+
+}
+
+
+
+const uniqueCardCategories =[ 
+    "basic land",
+    "basic replace",
+    "great land",
+]
+
+const cardCategories = [
+    "land",
+    "land upgrade",
+    "feature",  
+]
+
+const cardProperties = {
+    "land":[{name:"land types"},{name:"saltwater"},{name:"freshwater"},{name:"temperature"}],
+    "land upgrade":[],
+    "feature":[],
+    "basic land":[],
+    "basic replace":[{name:"replacing"},{name:"land types"},{name:"saltwater"},{name:"freshwater"},{name:"temperature"}],
+    "great land":[],
+}
+
+const landTypes = [
+    "desert",
+    "sea",
+    "plains",
+    "tundra",
+    "hills", 
+    "wetlands", 
+
+    "forest",
+    "mountain",
+    "lake",
+    "river", 
+]
+ 
 
 
 const MainLands = [
@@ -49,7 +105,7 @@ const MainLands = [
         name: "Desert",
         desc: "temp",
         temp: "hot",
-        category: "land",
+        category: "basic replace",
         cost: [0,0,0],
         types: ["basic","desert"],
 
@@ -58,6 +114,8 @@ const MainLands = [
         posX: -1,
         posY: -1,
         player: 0,
+        //functional
+        requirements:[{type:"none",values:[]}],
         effects:[
             {
                 trigger:TRIGGER.everyTurn,
@@ -66,56 +124,32 @@ const MainLands = [
             }
         ],
 
+        //visual cosmetic etc
         backColor: "#F9DCA0",
+        patterns: [
+            {
+                offX: 0.05,
+                offY: 0.05,
+                width: 0.6,
+                height: 0.1,
+                skew:0,
+                color:"#FF8F03",
+                shapes: [{
+                    type: "rectangle",
+                    offX: 0,
+                    offY: 0,
+                    size: [0.15,0.04],
+                },
+                {
+                    type:"circle",
+                    offX: 0,
+                    offY: 0,
+                    size: [0.15],
+                }
+                ]            
+            },
 
-        mainColor: "#FF8F03",
-        mainPattern: "0",
-        mainPatternX: 0.05,
-        mainPatternY: 0.05,
-        mainPatternW: 0.6,
-        mainPatternH: 0.1,
-        mainPatternSkew: 0,
-        mainPatternShape: "rectangle",
-        mainPatternParam1:  0.15,
-        mainPatternParam2: 0.04,
-        mainPatternParam3: 0,
-        mainPatternParam4: 0,  
-        mainPatternParam5: 0,  
-        mainPatternParam6: 0,  
-        mainPatternParam7: 0,  
-        mainPatternParam8: 0,  
-        mainPatternSubShape: "circle",
-        mainPatternSubParam1: 0.15,
-        mainPatternSubParam2: 0.2,
-        mainPatternSubParam3: 0.2,
-        mainPatternSubParam4: 0.0, 
-        mainPatternSubParam5: 0.0, 
-        mainPatternSubParam6: 0.0, 
-        mainPatternSubParam7: 0.0, 
-        mainPatternSubParam8: 0.0, 
-
-        subColor: "#ffffff",
-        
-        subPatternX: 0.05,
-        subPatternY: 0.05,
-        subPatternW: 0.6,
-        subPatternH: 0.1,
-        subPatternSkew: 0,
-        subPattern: "none",
-        subPatternShape: "none", 
-        subPatternParam1: 0.15,
-        subPatternParam2: 0.2,
-        subPatternParam3: 0.2,
-        subPatternParam4: 0.2,
-        subPatternParam5: 0,
-        subPatternParam6: 0,
-        subPatternSubShape: "none",
-        subPatternSubParam1: 0.15,
-        subPatternSubParam2: 0.2,
-        subPatternSubParam3: 0.2,
-        subPatternSubParam4: 0.2,
-        subPatternSubParam5: 0,
-        subPatternSubParam6: 0,
+        ] 
         
 
     },
@@ -157,8 +191,8 @@ const BasicPacks = [
 
         mainLandCard: {
             name: "Dunes",
-            type: "Land",
-            categories:["Desert"],
+            type: "land",
+            categories:["desert"],
             landReplace: MLAND.desert,
             mainColor: "#FFFFFF",
             mainPattern: "circle",
@@ -169,7 +203,7 @@ const BasicPacks = [
         },
 
         finalCard: { 
-            type: "Final",
+            type: "great",
 
         }, 
 
@@ -181,6 +215,56 @@ const BasicPacks = [
  
 ]
 
+
+
+
+const cardRequirements = {
+    "land":{
+            "none":[],
+            "land types":[
+             ["adjacent","nearby","anywhere"],landTypes,["equal","at least","less than"],0
+            ], 
+            "water":[
+                ["adjacent","nearby","anywhere"],["saltwater","freshwater","any water"],["equal","at least","less than"],0
+               ], 
+    },
+    "land upgrade":{
+        "none":[],
+        "land types":[
+            ["targeted","adjacent","nearby","anywhere"],landTypes,["equal","at least","less than"],0
+           ],
+        "water":[
+            ["adjacent","nearby","anywhere"],["saltwater","freshwater","any water"],["equal","at least","less than"],0
+           ], 
+    },
+    "feature":{ 
+            "none":[],
+            "land types":[
+                "targeted","adjacent","nearby","anywhere"    
+               ],  
+    },
+    "basic replace":{
+        "none":[],
+    }
+}
+
+const CDAT = {
+    CCAT:cardCategories, 
+    UCAT:uniqueCardCategories,
+    CREQUIRE:cardRequirements,
+    CPROP:cardProperties,
+    MLAND:MLAND,
+    MIMPROV:MIMPROV,
+    MainLands:MainLands,
+    BasicPacks:BasicPacks,
+}
+
+
+export {CDAT}
+
 export {patterns}
 export {MainLands}
 export {MLAND}
+export {shapeData}
+export {cardCategories}
+export {landTypes}

@@ -9,7 +9,7 @@ import col from './utility/colors';
 const Navbar = () => {
 
     const {
-        actions: { newRegister, attemptLogin, attemptAutoCookieLogin },
+        actions: { newRegister, attemptLogin, attemptAutoCookieLogin, logOut },
         state: { windowWidth,windowHeight, userInfo },
     } = useContext(AppContext);
 
@@ -34,7 +34,7 @@ const Navbar = () => {
     return (
         <MainNavbarDiv>
             {userInfo.username === null && (
-            <UserInfo> 
+            <UserInfo style={{width:`${windowWidth/9}px`}}> 
                 <p>NOT LOGGED IN</p>
                 <p><LoginButton
                 onClick={()=>{
@@ -89,8 +89,13 @@ const Navbar = () => {
                 )} 
             </UserInfo> )}
             {userInfo.username != null && (<>
-                <UserInfo>
-                    Logged in as <span style={{fontWeight:"bold"}}>{userInfo.username}</span> <LoginButton>{"(Logout)"}</LoginButton>
+                <UserInfo style={{width:`${windowWidth/9}px`}}>
+                    Logged in as <span style={{fontWeight:"bold"}}>{userInfo.username}</span> 
+                    <LoginButton
+                        onClick={()=>{
+                            logOut();
+                        }}
+                    >{"(Logout)"}</LoginButton>
                 </UserInfo>
             </>)}
 
