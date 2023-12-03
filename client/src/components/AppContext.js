@@ -266,10 +266,16 @@ const reducer = (state, action) => {
       _newPack.basicReplaceLand = {...templateReplaceLand, name:"new replace land", category:"basic replace",cardId:(_newPack.packName+"replace").replace(" ","0"),
       requirements: [{...templateReplaceLand.requirements[0]}],
       patterns: [{...templateReplaceLand.patterns[0], shapes:[{...templateReplaceLand.patterns[0].shapes[0]}]}], 
+      cost: [...templateReplaceLand.cost],
+        "land types": [...templateReplaceLand["land types"]],
+        "feature types": [...templateReplaceLand["feature types"]],
       };
       _newPack.greatLand = {...templateGreatLand, patterns:[], name:"new great land",category:"great land",cardId:(_newPack.packName+"great").replace(" ","0"),
         requirements: [{...templateGreatLand.requirements[0]}],
         patterns: [{...templateGreatLand.patterns[0], shapes:[{...templateGreatLand.patterns[0].shapes[0]}]}], 
+        cost: [...templateGreatLand.cost],
+        "land types": [...templateGreatLand["land types"]],
+        "feature types": [...templateGreatLand["feature types"]],
     };
       _customPacks.push(_newPack) ; 
       console.log("cpack", state.customPacks.length);
@@ -331,6 +337,8 @@ const reducer = (state, action) => {
         requirements: [{...templateNewCard.requirements[0]}],
         patterns: [{...templateNewCard.patterns[0], shapes:[{...templateNewCard.patterns[0].shapes[0]}]}], 
         cost: [...templateNewCard.cost],
+        "land types": [...templateNewCard["land types"]],
+        "feature types": [...templateNewCard["feature types"]],
       }
       _editPack.packCards.push(
         _newCard,
@@ -361,6 +369,8 @@ const reducer = (state, action) => {
         effects:[],
         patterns:[],
         cost: [...action.data.cost],
+        "land types": [...action.data["land types"]],
+        "feature types": [...action.data["feature types"]],
         cardId:"-EDITED",
       }
  
@@ -414,8 +424,19 @@ const reducer = (state, action) => {
       }
 
       const _saveCard = state.currentEditCard;
+      let _tempName = _saveCard.name.replace(/[^a-zA-Z ]/g, "");
+      while (_tempName[0] === " ")
+      {
+        _tempName = _tempName.slice(1);
+      }
+
+      while (_tempName[_tempName.length-1] === " ")
+      {
+        _tempName = _tempName.slice(0,_tempName.length-1);
+      }
 
       const _tempCard = {...state.currentEditCard,
+        name: _tempName,
         cardId: _replaceCard.cardId,
         requirements: [],
         effects:[],
@@ -464,7 +485,8 @@ const reducer = (state, action) => {
 
       console.log(_packCopy);
        return {
-        ...state,
+        ...state, 
+        currentEditCard:{...state.currentEditCard,name:_tempName},
         currentEditPack:_packCopy,
       } 
 
@@ -553,6 +575,22 @@ const reducer = (state, action) => {
       const _req = state.currentEditCard.requirements[action.data.req];
       _req.type = action.data.value;
 
+      const _propertiesList = CDAT.CREQUIRE[state.currentEditCard.category][action.data.value];
+      const _newReqArray = []; 
+      for (let _i = 0; _i < _propertiesList.length; _i++)
+      {
+        if (typeof _propertiesList[_i] === "object")
+        {
+          _newReqArray.push(_propertiesList[_i][0]); 
+        }
+        else if (typeof _propertiesList[_i] === "number")
+        {
+          _newReqArray.push(0); 
+          
+        }
+      }
+      _req.values = _newReqArray;
+
       const _editedCard = {
         ...state.currentEditCard,
         cardId:"-EDITED",
@@ -562,6 +600,22 @@ const reducer = (state, action) => {
         currentEditCard:_editedCard,
       }
     }
+
+    case 'set-requirement-value': {
+      const _req = state.currentEditCard.requirements[action.data.req]; 
+      
+      _req.values[action.data.param] = action.data.value;
+
+      const _editedCard = {
+        ...state.currentEditCard,
+        cardId:"-EDITED",
+      }; 
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    }
+
     ///requirement garbage end
     ///effect garbage start
     case 'add-effect': { 
@@ -1031,6 +1085,7 @@ export const AppProvider = ({ children }) => {
     }
     
     const setEditPack = (data) =>{
+      console.log("set edit ",data);
       dispatch({
         type:"set-edit-pack",
         data:data

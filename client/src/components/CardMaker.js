@@ -69,7 +69,7 @@ const CardMaker = () => {
             setEditCardIndex(-2);
             setEditPackChooser(currentEditPack.packName);
             setNewPacking(false);
-            setPackModified(false);
+            setPackModified(true);
             setEditablePack(true);
         }
     },[newPacking]);
@@ -151,9 +151,13 @@ const CardMaker = () => {
                 }
                }}
                 {...( editablePack && (!packModified || cardModified) ?{disabled:true,className:"disabled"}:{})} 
-               >Save</MiniAddRequirementButton>
+               >Save+upload</MiniAddRequirementButton>
                
-               <MiniAddRequirementButton {...( editablePack && ( !packModified || cardModified) ?{disabled:true,className:"disabled"}:{})}>Discard</MiniAddRequirementButton>
+               <MiniAddRequirementButton {...( editablePack && ( !packModified || cardModified) ?{disabled:true,className:"disabled"}:{})}
+               onClick={(event)=>{
+
+               }}
+               >Discard</MiniAddRequirementButton>
               </Link> </p>
                <p>
                Change name<CardNameInput type="text" defaultValue={currentEditPack.packName}
@@ -171,7 +175,7 @@ const CardMaker = () => {
                 (event)=>{
                     newEditPack();  
                     setCardModified(false);
-                    setPackModified(false);
+                    setPackModified(true);
                     setEditablePack(true);   
                     setNewPacking(true);
                 }} 
@@ -356,6 +360,7 @@ const CardMaker = () => {
                         
                         {(currentEditCard.category != "basic replace" && currentEditCard.category != "great land") && (
                             <select
+                            value={currentEditCard.category}
                             onChange={(event)=>{  
                                      setCardModified(true);
                                     setEditCard({category:event.target.value})
@@ -400,19 +405,41 @@ const CardMaker = () => {
                     {CDAT.CPROP[currentEditCard.category].map((_property,_propIndex)=>{
                         //------------------------------------------------Requirement map start -----------------------------------------
                         return (<p>{_property.name}:  
-                                <select>
+                                <select 
+                                      {...( Array.isArray(currentEditCard[_property.name]) ?{ value:currentEditCard[_property.name][0] }:{ value:currentEditCard[_property.name] })} 
+                                    onChange={(event)=>{ 
+                                        if (  Array.isArray(currentEditCard[_property.name]))
+                                        {
+                                            currentEditCard[_property.name].splice(0,1,event.target.value); 
+                                            setEditCard({[_property.name]:currentEditCard[_property.name]});
+                                        }
+                                        else
+                                        {
+                                            setEditCard({[_property.name]:event.target.value});
+                                        }
+                                        
+                                        setCardModified(true);
+                                    }}
+                                >
 
                                 {_property.choices.map((_choice,_choiceIndex)=>{
                                     return(
                                         <option >{_choice}</option>
                                     )
                                 })
-                                /////---------------property choices - land types get 2 extra choices below so that lands can have up to 3 types
                                 } 
 
                                 </select>
-                                {_property.name === "land types" && ( 
-                                    <select><option >{"none"}</option>{_property.choices.map((_choice,_choiceIndex)=>{
+                                {(_property.name === "land types" || _property.name === "feature types") && ( 
+                                    <select
+                                        value={currentEditCard[_property.name][1]}
+                                        onChange={(event)=>{ 
+                                            currentEditCard[_property.name].splice(1,1,event.target.value); 
+                                            setEditCard({[_property.name]:currentEditCard[_property.name]});
+                                            setCardModified(true);
+                                        }}
+                                    
+                                    ><option >{"none"}</option>{_property.choices.map((_choice,_choiceIndex)=>{
                                         
                                         return(
                                             <option >{_choice}</option>
@@ -420,13 +447,19 @@ const CardMaker = () => {
                                     })} </select>
                                  )}
                                   {_property.name === "land types" && ( 
-                                    <select><option >{"none"}</option>{_property.choices.map((_choice,_choiceIndex)=>{
+                                    <select
+                                    value={currentEditCard[_property.name][2]}
+                                         onChange={(event)=>{ 
+                                            currentEditCard[_property.name].splice(2,1,event.target.value); 
+                                            setEditCard({[_property.name]:currentEditCard[_property.name]});
+                                            setCardModified(true);
+                                          }}
+                                    ><option >{"none"}</option>{_property.choices.map((_choice,_choiceIndex)=>{
                                         return(
                                             <option >{_choice}</option>
                                         )
                                     })} </select>
-                                 )}
-                                </p>)}
+                                 )} </p>)}
                              )}  
                     <p>---</p>
                     {currentEditCard.requirements.map(
@@ -439,6 +472,7 @@ const CardMaker = () => {
                                     >Delete</DeleteRequirementButton> 
                                 )}
                                     <select
+                                         value={currentEditCard.requirements[_index].type}
                                          onChange={(event)=>{ 
                                             setRequirementType({req:_index,value:event.target.value});
                                             setCardModified(true);
@@ -464,7 +498,12 @@ const CardMaker = () => {
                                                     
                                                     switch(typeof _rParam){
                                                         case "object":{
-                                                            return( <select>
+                                                            return( <select
+                                                                value={currentEditCard.requirements[_index].values[_rParamIndex]}
+                                                                onChange={(event)=>{
+                                                                    setRequirementValue({req:_index,param:_rParamIndex,value:event.target.value});
+                                                                }}
+                                                            >
                                                                     
                                                                     {_rParam.map((_mParam,_mParamIndex)=>{
                                                                 return (
@@ -473,7 +512,12 @@ const CardMaker = () => {
                                                             })}
                                                             </select>)}
                                                         case "number":{
-                                                            return(<ReqInput type ="number" min="0" max="50"/>)
+                                                            return(<ReqInput 
+                                                                value={currentEditCard.requirements[_index].values[_rParamIndex]}
+                                                                onChange={(event)=>{
+                                                                    setRequirementValue({req:_index,param:_rParamIndex,value:event.target.value});
+                                                                }}
+                                                                type ="number" min="0" max="50"/>)
                                                         }
                                                     }
                                                 }
@@ -649,7 +693,7 @@ const CardMaker = () => {
                                                         </>
                                                     )}
                                                     <p style={{paddingLeft:"9%"}}>--P{_patternIndex}Shape{_shapeIndex} type</p>  <p><BigSelect
-                                                        defaultValue={currentEditCard.patterns[_patternIndex].shapes[_shapeIndex].type}
+                                                        value={currentEditCard.patterns[_patternIndex].shapes[_shapeIndex].type}
                                                         onChange={(event)=>{ 
                                                                  setCardModified(true);
                                                                 setShapeStat({pattern:_patternIndex,shape:_shapeIndex,key:"type",value:event.target.value}) 
@@ -884,14 +928,15 @@ font-weight: bold;
 
 const MiniAddRequirementButton = styled.button`
 color:black;  
-padding:4px 27px 4px 27px;
+margin-left:2px;
+padding:4px 16px 4px 16px;
 &:hover{
 border: 4px solid yellow;
-padding:0px 15px 0px 16px;
+padding:0px 4px 0px 4px;
 font-weight: bold; 
 &.disabled{
         border:none;
-        padding:4px 27px 4px 27px;
+        padding:4px 16px 4px 16px;
         font-weight:normal;
     }
 }
