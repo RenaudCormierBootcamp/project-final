@@ -12,7 +12,7 @@ import CardTooltip from "./CardTooltip";
 import PlayableCard from "./PlayableCard";
 import {CARDFUNC} from "./game/cardfunctions.js";
 
-import {MainLands,MLAND} from "./utility/testdata.js";
+import {MainLands,CDAT} from "./utility/testdata.js";
 
 const funnyArray = [];
 for (let _i=0; _i < 64;_i++)
@@ -211,7 +211,7 @@ const GameBoard = () => {
                     
                     <PlayableCard
                     cardObj={{
-                        ...MainLands[MLAND.desert],
+                        ...CDAT.MLAND[CDAT.MLANDI.desert],
                         player:currentPlayer,
                         cardId:1,
                         name:"desert",

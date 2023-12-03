@@ -1,8 +1,9 @@
 const cardTriggers = {
-    everyTurn: "every turn ",
-    onPlay: "on play ",
-    afterTimer: "after $ turns ",
-    whenAdjacentPlayed: "when an adjacent land is added "
+    none: {name:"none"},
+    everyTurn: {name:"every turn"},
+    onPlay: {name:"on play"},
+    afterTimer: {name:"after $ turns"},
+    whenAdjacentPlayed: {name:"when an adjacent land is added"}
   }
 
 const addResource = (state,resourceArray) =>

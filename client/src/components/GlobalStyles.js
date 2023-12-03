@@ -69,4 +69,8 @@ export default createGlobalStyle`
     background: #f0f0f0;
   }
 
+  .disabled, .disabled:hover {
+    cursor: not-allowed;
+  }
+
 `;

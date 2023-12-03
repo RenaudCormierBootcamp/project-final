@@ -16,20 +16,13 @@ const BoardCard = ({cardObj,posX,posY}) => {
     const [color,setColor] = useState(`rgba(255,255,255,0)`); 
     const [loadCard,setLoadCard] = useState(false);
 
-    useEffect(
-        ()=>{ 
-            setColor(cardObj.backColor);
-            console.log("DOG");
-            
-            //setColor(`rgb(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)})`);
-        }
-        ,[])
+    
 
     useEffect(
         ()=>{
             if (cardObj.cardId != null)
             {
-                setBigPattern(cardPatternCreate()) 
+                setBigPattern(cardPatternCreate());
             } 
         }
         ,[cardObj]
@@ -84,6 +77,7 @@ const BoardCard = ({cardObj,posX,posY}) => {
     const cardPatternCreate = () =>{
         
         const _arrayOfArrays = [];
+        const _id = cardObj.cardId;  
         for (let _i = 0; _i < cardObj.patterns.length; _i++)
         {
             const _smallArray = []; 
@@ -95,20 +89,19 @@ const BoardCard = ({cardObj,posX,posY}) => {
                 {
                     case "rectangle":
                         _smallArray.push( 
-                            rectanglePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                            rectanglePattern(`-${_id}-shape${_i}-${_j}-`,_pattern.color,_shape));
                     break;
                     case "circle":
                         _smallArray.push(
-                            circlePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                            circlePattern(`-${_id}-shape${_i}-${_j}-`,_pattern.color,_shape));
                     break;
                     case "triangle":
                         _smallArray.push(
-                            trianglePattern(`-shape${_i}-${_j}-`,_pattern.color,_shape));
+                            trianglePattern(`-${_id}-shape${_i}-${_j}-`,_pattern.color,_shape));
                     break;
                 }
-            }
-            console.log("pattern "+String(_i),"xoff "+String(_pattern.offX),"width "+String(_pattern.width));
-            _arrayOfArrays.push(createPattern(`-pattern-${_i}-`,_pattern.offX,_pattern.offY,_pattern.width,_pattern.height,_pattern.skew,_smallArray));
+            } 
+            _arrayOfArrays.push(createPattern(`-${_id}-pattern-${_i}-`,_pattern.offX,_pattern.offY,_pattern.width,_pattern.height,_pattern.skew,_smallArray));
         } 
 
         return (

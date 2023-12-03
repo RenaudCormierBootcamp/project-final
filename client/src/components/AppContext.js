@@ -1,7 +1,8 @@
 import { createContext,useReducer } from "react";  
 import {CARDFUNC} from "./game/cardfunctions.js"; 
+import { Navigate } from "react-router-dom";
 
-import {MainLands,MLAND,shapeData} from "./utility/testdata.js";
+import {CDAT,MainLands,shapeData} from "./utility/testdata.js";
 
 const {TRIGGER} = CARDFUNC;
 
@@ -15,6 +16,23 @@ const cardTriggers = {
   whenAdjacentPlayed: "when an adjacent land is added "
 }
 
+const templateNewCard = {...CDAT.landTemplate }
+
+const templateReplaceLand = {
+  ...CDAT.landTemplate,
+}
+
+const templateGreatLand = {
+  ...CDAT.landTemplate,
+}
+
+const templatePack = {
+  packName:"NEW PACK",
+  defaultPack:false,
+  basicReplaceLand: null,
+  greatLand: null,
+  packCards: [],
+}
 
 const _startGrid = [];
 const emptyGrid = [];
@@ -32,31 +50,17 @@ for (let _i =0; _i < boardSize;_i++)
   } 
   const _targetGrid = emptyGrid.slice().map(_i=>_i.slice()); 
 
-  _startGrid[3][3]= {...MainLands[MLAND.desert], player:1,cardId:1,posX:3,posY:3, }
-  _startGrid[3][4]= {...MainLands[MLAND.desert], player:2,cardId:1,posX:3,posY:4, }
-  _startGrid[4][3]= {...MainLands[MLAND.desert], player:2,cardId:1,posX:4,posY:3, }
-  _startGrid[4][4]= {...MainLands[MLAND.desert], player:1,cardId:1,posX:4,posY:4, } 
+  _startGrid[3][3]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:1,cardId:1,posX:3,posY:3, }
+  _startGrid[3][4]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:2,cardId:1,posX:3,posY:4, }
+  _startGrid[4][3]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:2,cardId:1,posX:4,posY:3, }
+  _startGrid[4][4]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:1,cardId:1,posX:4,posY:4, } 
 
-  let newEditCard = {
-    name:"new card",
-    desc:"",
-    types:[],
-    effects:[],
-    posX: -1,
-    posY: -1,
-    player: 0,
-    backColor:"#ffffff",
-    mainColor:"#000000",
-    mainPattern:null,
-    mainPatternShape: null,
-    mainPatternSubShape:null,
-    subColor: "#ffffff",
-    subPattern: null,
-    subPatternShape: "rectangle",
-  };
+   
 
-  newEditCard = {
-    ...MainLands[MLAND.desert], player:1,cardId:1,posX:3,posY:3,
+ const newEditCard = {
+    ...templateNewCard,
+    requirements: [{...templateNewCard.requirements[0]}],
+        patterns: [{...templateNewCard.patterns[0], shapes:[{...templateNewCard.patterns[0].shapes}]}], 
   }
 
 const initialState = {   
@@ -65,7 +69,7 @@ const initialState = {
     ],
     currentTurn: 1,
     maxTurns: 20,
-
+    templateNewCard:templateNewCard,
     playerResources: [[10,0,0],[10,0,0]],
     resourcesPlus: [[0,0,0],[0,0,0]],
     boardSize: boardSize,
@@ -89,16 +93,19 @@ const initialState = {
     mouseX: 0,
     mouseY: 0, 
     userInfo: {username:null}, 
+    currentEditCardIndex: 0,
+    currentEditPackIndex: 0,
      
     cardTriggers:cardTriggers,
 
-    customPacks: [],
-
-    
-    currentEditCard: newEditCard,
+    customPacks: [], 
+    copyCard: null,
+    currentEditCard: newEditCard, 
     currentEditPack: {
-      name:"new pack",
-      cards:[newEditCard],
+      name:"Basic Cards",
+      basicReplaceLand: null,
+      greatLand: null,
+      packCards: [...CDAT.MainLands],
     },
   };
 
@@ -222,24 +229,291 @@ const reducer = (state, action) => {
           resourcesPlus:_tempArray,
         }
     }
- 
-    case 'set-edit-card': {
 
+    ///----------------------------------------  
+    ///bookmarkeditcard bookmarkeditpack-------------------------------------
+    ///----------------------------------------
+ 
+    case 'new-edit-pack': {
+
+      const _customPacks = [...state.customPacks];
+
+      const _newPack = {
+        ...templatePack,
+      };
+      let _check = true;
+      let _index = 0;
+      _newPack.packName = "NEW PACK"+String(_index);
+      if (_customPacks.length > 0)
+      {
+        while (_check)
+        {
+          for (let _i = 0; _i < state.customPacks.length;_i++)
+          {
+            const _checkPack = state.customPacks[_i];
+            if (_newPack.packName === _checkPack.packName)
+            { 
+              _newPack.packName = "NEW PACK"+String(_index);
+              _index += 1;
+            }
+            else
+            {
+              _check = false;
+            }
+          }
+        } 
+      }
+      _newPack.basicReplaceLand = {...templateReplaceLand, name:"new replace land", category:"basic replace",cardId:(_newPack.packName+"replace").replace(" ","0"),
+      requirements: [{...templateReplaceLand.requirements[0]}],
+      patterns: [{...templateReplaceLand.patterns[0], shapes:[{...templateReplaceLand.patterns[0].shapes[0]}]}], 
+      };
+      _newPack.greatLand = {...templateGreatLand, patterns:[], name:"new great land",category:"great land",cardId:(_newPack.packName+"great").replace(" ","0"),
+        requirements: [{...templateGreatLand.requirements[0]}],
+        patterns: [{...templateGreatLand.patterns[0], shapes:[{...templateGreatLand.patterns[0].shapes[0]}]}], 
+    };
+      _customPacks.push(_newPack) ; 
+      console.log("cpack", state.customPacks.length);
+      return {
+        ...state,
+        currentEditPackIndex: state.customPacks.length,
+        customPacks: _customPacks,
+        currentEditPack: _newPack,
+      }
+    }
+
+    case 'change-edit-pack': {
+
+      const _editPack = { 
+        ...action.data,
+      }; 
+
+      return {
+        ...state,
+        currentEditPack:_editPack,
+      }
+    }
+
+    case 'save-edit-pack': {
+      const _customPacks = [...state.customPacks];
+      _customPacks[state.currentEditPackIndex] = state.currentEditPack; 
+
+      return {
+        ...state,
+        customPacks:_customPacks,
+      }
+    }
+
+    case 'set-edit-pack': {
+      const _editPack = { 
+        ...state.currentEditPack,
+        ...action.data,
+      }; 
+
+      return {
+        ...state,
+        currentEditPack:_editPack,
+      }  
+    }
+
+    case 'set-edit-pack-index': {
+      
+      return {
+        ...state,
+        currentEditPackIndex:action.data,
+      }
+    }
+
+    case 'new-edit-card': {
+
+      const _editPack = state.currentEditPack;
+      const _newCard = {...templateNewCard,
+        cardId: (state.currentEditPack.packName+String(_editPack.packCards.length-1)).replace(" ","_"),
+        requirements: [{...templateNewCard.requirements[0]}],
+        patterns: [{...templateNewCard.patterns[0], shapes:[{...templateNewCard.patterns[0].shapes[0]}]}], 
+        cost: [...templateNewCard.cost],
+      }
+      _editPack.packCards.push(
+        _newCard,
+      )
+        
+      return {
+        ...state,
+        currentEditCardIndex:_editPack.packCards.length-1,
+        currentEditCard: {..._newCard,cardId: "-EDITED",},
+        currentEditPack:_editPack,
+      }
+    }
+
+    case 'delete-edit-card':{ 
+      const _tempPack = {...state.currentEditPack};
+      _tempPack.packCards.splice(action.data,1);
+
+      return {
+        currentEditPack: _tempPack,
+        ...state, 
+      } 
+    }
+
+    case 'load-edit-card': { 
+      
+      const _loadCard = {...action.data,
+        requirements:[],
+        effects:[],
+        patterns:[],
+        cost: [...action.data.cost],
+        cardId:"-EDITED",
+      }
+ 
+
+      for (let _i =0; _i < action.data.requirements.length ;_i++)
+      {
+        _loadCard.requirements.push({...action.data.requirements[_i]});
+      }
+
+      for (let _i =0; _i < action.data.effects.length ;_i++)
+      {
+        const _resulty = [];
+        for (let _j =0; _j < action.data.effects[_i].results.length;_j++)
+        {
+          _resulty.push(action.data.effects[_i].results[_j]) 
+        }
+        _loadCard.effects.push({...action.data.effects[_i],results:_resulty});
+      }
+
+      for (let _i =0; _i < action.data.patterns.length ;_i++)
+      {
+         const _shapey = []; 
+        for (let _j =0; _j < action.data.patterns[_i].shapes.length;_j++)
+        {
+          _shapey.push({...action.data.patterns[_i].shapes[_j],size:[...action.data.patterns[_i].shapes[_j].size]});
+        }
+        _loadCard.patterns.push({...action.data.patterns[_i],shapes:_shapey});
+      }
+
+      return {
+        ...state,
+        currentEditCard:_loadCard,
+      } 
+    }
+
+    case 'save-edit-card': {
+
+      let _replaceCard = { }
+
+      if (state.currentEditCardIndex == -2 )
+      {
+        _replaceCard = state.currentEditPack.basicReplaceLand;
+      }
+      else if ( state.currentEditCardIndex == -1 )
+      {
+        _replaceCard = state.currentEditPack.greatLand;
+      }
+      else
+      {
+        _replaceCard = state.currentEditPack.packCards[state.currentEditCardIndex];
+      }
+
+      const _saveCard = state.currentEditCard;
+
+      const _tempCard = {...state.currentEditCard,
+        cardId: _replaceCard.cardId,
+        requirements: [],
+        effects:[],
+        patterns:[],
+      };
+
+      for (let _i =0; _i < _saveCard.requirements.length ;_i++)
+      {
+        _tempCard.requirements.push({..._saveCard.requirements[_i]});
+      }
+
+      for (let _i =0; _i < _saveCard.effects.length ;_i++)
+      {
+        const _resulty = [];
+        for (let _j =0; _j < _saveCard.effects[_i].results.length;_j++)
+        {
+          _resulty.push(_saveCard.effects[_i].results[_j]) 
+        }
+        _tempCard.effects.push({..._saveCard.effects[_i],results:_resulty});
+      }
+
+      for (let _i =0; _i < _saveCard.patterns.length ;_i++)
+      {
+         const _shapey = []; 
+        for (let _j =0; _j < _saveCard.patterns[_i].shapes.length;_j++)
+        {
+          _shapey.push({..._saveCard.patterns[_i].shapes[_j],size:[..._saveCard.patterns[_i].shapes[_j].size]});
+        }
+        _tempCard.patterns.push({..._saveCard.patterns[_i],shapes:_shapey});
+      }
+
+      const _packCopy = {...state.currentEditPack}
+
+      if (state.currentEditCardIndex == -2 )
+      {
+        _packCopy.basicReplaceLand = _tempCard;
+      }
+      else if ( state.currentEditCardIndex == -1 )
+      {
+         _packCopy.greatLand = _tempCard;
+      }
+      else
+      {
+         _packCopy.packCards[state.currentEditCardIndex] = _tempCard;
+      }
+
+      console.log(_packCopy);
+       return {
+        ...state,
+        currentEditPack:_packCopy,
+      } 
+
+    }
+
+    case 'set-edit-card': {
+       
       const _editedCard = {
         ...state.currentEditCard,
         ...action.data,
+        cardId:"-EDITED",
       };
-
+      console.log(_editedCard);
       return {
         ...state,
         currentEditCard:_editedCard,
       }
     }
 
+    case 'set-edit-card-index': {
+  
+      return {
+        ...state,
+        currentEditCardIndex:action.data,
+      }
+    }
+
+    case 'set-copy-card': {
+
+      return {
+        ...state, 
+        copyCard: {...state.currentEditCard},
+      }
+    }
+
+    case 'paste-copy-card': {
+      
+      return {
+          ...state, 
+          currentEditCard: {...state.copyCard,cardId:"-EDITED"},
+        }
+    }
+
+     ///bookmarkrequirement garbage
     case 'add-requirement': {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
       _editedCard.requirements.push({type:"none",value:[]});
       return {
@@ -252,6 +526,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
       _editedCard.requirements.splice(action.data,1);
       return {
@@ -264,6 +539,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
       _editedCard.requirements = [{type:"none"}]
       return {
@@ -279,14 +555,83 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
-      };
-      console.log("cardo ",_editedCard);
+        cardId:"-EDITED",
+      }; 
       return {
         ...state,
         currentEditCard:_editedCard,
       }
     }
+    ///requirement garbage end
+    ///effect garbage start
+    case 'add-effect': { 
 
+      const _editedCard = {
+        ...state.currentEditCard,
+        cardId:"-EDITED",
+      }; 
+      
+      _editedCard.effects.push({
+                trigger:"none",
+                results:[],
+            });
+      return {
+        ...state,
+        currentEditCard:_editedCard,
+      }
+    } 
+    
+    case 'add-result': {
+        
+
+        const _editedCard = {
+          ...state.currentEditCard,
+          cardId:"-EDITED",
+        }; 
+        _editedCard.effects[action.data].results.push({
+                numberSet:"number",
+                numberUse:"none", 
+                numberValue:1,
+                numberPlus:0,
+              })
+        return {
+          ...state,
+          currentEditCard:_editedCard,
+        }
+      }
+
+      case 'remove-result': {
+        
+
+        const _editedCard = {
+          ...state.currentEditCard,
+          cardId:"-EDITED",
+        }; 
+        _editedCard.effects[action.data].results.pop();
+        return {
+          ...state,
+          currentEditCard:_editedCard,
+        }
+      }
+
+
+
+    case 'delete-effect': {
+      const _effects = state.currentEditCard.effects;
+      _effects.splice(action.data,1);
+
+        const _editedCard = {
+          ...state.currentEditCard,
+          cardId:"-EDITED",
+        };  
+
+        return {
+          ...state,
+          currentEditCard:_editedCard,
+        }
+      }
+    ///-----
+    ///card creation visual garbo
     case 'set-pattern-stat': { 
      
       const _pattern = state.currentEditCard.patterns[action.data.pattern]; 
@@ -294,6 +639,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -319,6 +665,7 @@ const reducer = (state, action) => {
       }
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -335,6 +682,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -357,6 +705,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -371,6 +720,7 @@ const reducer = (state, action) => {
 
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -397,6 +747,7 @@ const reducer = (state, action) => {
       })
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED"
       };
 
       return {
@@ -410,6 +761,7 @@ const reducer = (state, action) => {
       _pattern.shapes.splice(action.data.shape, 1);
       const _editedCard = {
         ...state.currentEditCard,
+        cardId:"-EDITED",
       };
 
       return {
@@ -482,8 +834,7 @@ const reducer = (state, action) => {
 export const AppProvider = ({ children }) => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
-
-    
+ 
 
     const contextDimensions = (data) =>{
 
@@ -547,8 +898,7 @@ export const AppProvider = ({ children }) => {
       })
     }
  
-    const addResourcesPlus = (data) =>{
-      console.log("HELLO");
+    const addResourcesPlus = (data) =>{ 
       dispatch({
         type: "add-resources-plus",
         data:data,
@@ -663,6 +1013,80 @@ export const AppProvider = ({ children }) => {
       return _tempArray;
 
     } 
+
+    const newEditPack = (data) => {
+
+      dispatch({
+        type:"new-edit-pack",
+        data:data,
+      })
+    }
+
+    const saveEditPack = (data) =>{
+
+      dispatch({
+        type:"save-edit-pack",
+        data:data
+      }) 
+    }
+    
+    const setEditPack = (data) =>{
+      dispatch({
+        type:"set-edit-pack",
+        data:data
+      })
+
+    }
+
+    const setEditPackIndex = (data) =>{
+
+      dispatch({
+        type:"set-edit-pack-index",
+        data:data,
+      })
+    }
+
+    const changeEditPack = (data) =>{
+
+      dispatch({
+        type:"change-edit-pack",
+        data:data,
+      })
+
+    }
+
+    const deleteEditCard = (data) =>{
+
+      dispatch({
+        type:"delete-edit-card",
+        data:data,
+      })
+    }
+
+    const newEditCard = (data) =>{
+
+      dispatch({
+        type:"new-edit-card",
+        data:data,
+      })
+    }
+
+    const saveEditCard = (data) =>{
+
+      dispatch({
+        type:"save-edit-card",
+        data:data,
+      })
+    }
+
+    const loadEditCard = (data) =>{ 
+
+      dispatch({
+        type:"load-edit-card",
+        data:data,
+      });
+    }
+
     const setEditCard = (data) =>{
 
       dispatch({
@@ -671,6 +1095,35 @@ export const AppProvider = ({ children }) => {
       })
 
     }
+
+    const setEditCardIndex = (data) =>{
+
+      dispatch({
+        type:"set-edit-card-index",
+        data:data,
+      })
+
+    }
+
+    const setCopyCard = (data) =>{
+
+      dispatch({
+        type:"set-copy-card",
+        data:data,
+      })
+
+    }
+
+    const pasteCopyCard = (data) =>{
+
+      dispatch({
+        type:"paste-copy-card",
+        data:data,
+      })
+
+    }
+
+    ///pattern etc
 
     const setPatternStat = (data) =>{
 
@@ -731,6 +1184,44 @@ export const AppProvider = ({ children }) => {
 
     } 
 
+    ///card functionality design section
+
+    const addEffect = (data) => {
+      
+      dispatch({
+        type:"add-effect",
+        data:data,
+      })
+    }
+
+    const deleteEffect = (data) => {
+      
+      dispatch({
+        type:"delete-effect",
+        data:data,
+      })
+    }
+
+    const addResult = (data) => {
+
+
+      dispatch({
+        type:"add-result",
+        data:data,
+      })
+    }
+
+    const removeResult = (data) => {
+
+
+      dispatch({
+        type:"remove-result",
+        data:data,
+      })
+    }
+
+
+    
     const addRequirement = (data) =>{
       dispatch({
         type:"add-requirement",
@@ -773,7 +1264,7 @@ export const AppProvider = ({ children }) => {
         let _rando = Math.floor(Math.random()*_possibleTargets.length); 
         const _targetSpace = _possibleTargets[_rando];
         setCard({posX:_targetSpace.posX,posY:_targetSpace.posY,card:{
-                        ...MainLands[MLAND.desert],
+                        ...CDAT.MLAND[CDAT.MLANDI.desert],
                         player:2,
                         cardId:1, 
         }})
@@ -788,8 +1279,7 @@ export const AppProvider = ({ children }) => {
     ///-------------------------------------------------------------------------------------------////
     ///-------------------------------------------------------------------------------------------////
 
-    const newRegister = async (data) => {
-            console.log("HELLO");
+    const newRegister = async (data) => { 
             let _status = "";
               fetch('/register',
               {
@@ -803,8 +1293,7 @@ export const AppProvider = ({ children }) => {
                 _status = res.status;
                 return res.json(); 
               })
-              .then((res) => {  
-                console.log("res",res);
+              .then((res) => {   
                 if (_status === 200)
                 {
                   dispatch({
@@ -821,13 +1310,12 @@ export const AppProvider = ({ children }) => {
             
               })
             .catch((error)=>{
-              console.log(error);  
+              console.log("error ",error);  
               })
 
     }
 
-    const attemptLogin = async (data) => {
-      console.log("HELLO")
+    const attemptLogin = async (data) => { 
       let _status = "";
         fetch('/login',
         {
@@ -859,14 +1347,13 @@ export const AppProvider = ({ children }) => {
       
         })
       .catch((error)=>{
-        console.log(error);  
+        console.log("error ",error);  
         })
 
     } 
 
 
-    const attemptAutoCookieLogin = async (data) => {
-      console.log("HELLO")
+    const attemptAutoCookieLogin = async (data) => { 
       let _status = "";
         fetch('/autologin',
         {
@@ -897,7 +1384,7 @@ export const AppProvider = ({ children }) => {
       
         })
       .catch((error)=>{
-        console.log(error);  
+        console.log("error ",error);  
         })
 
     } 
@@ -930,7 +1417,7 @@ export const AppProvider = ({ children }) => {
               }) 
         })
       .catch((error)=>{
-        console.log(error);  
+        console.log("error ",error);  
         })
 
       
@@ -963,13 +1450,12 @@ export const AppProvider = ({ children }) => {
 
               nextTurn,
               //---- card editor etc --
-              setEditCard,
+              setCopyCard,pasteCopyCard,
+              newEditCard,loadEditCard,saveEditCard,setEditCard,setEditCardIndex,deleteEditCard,
+              changeEditPack,newEditPack,setEditPack,saveEditPack,setEditPackIndex,
               //functional
-              setRequirementType,
-              setRequirementValue,
-              addRequirement,
-              deleteRequirement,
-              resetRequirements,
+              addEffect,deleteEffect,addResult,removeResult,
+              setRequirementType, setRequirementValue,addRequirement,deleteRequirement,resetRequirements,
               //visual
               setPatternStat,
               setShapeStat,
