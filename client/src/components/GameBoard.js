@@ -5,14 +5,14 @@ import scrollUrl from '../assets/scroll_bg.jpg';
 
 import { AppContext } from "./AppContext";  
 import BoardCard from "./BoardCard";
-import { CiSun } from "react-icons/ci";
+import { FaRegSun } from "react-icons/fa"; 
 import { GiMoon } from "react-icons/gi";
 import { BsStars } from "react-icons/bs";
 import CardTooltip from "./CardTooltip";
 import PlayableCard from "./PlayableCard";
+import HandTooltip from "./HandTooltip.js";
 import {CARDFUNC} from "./game/cardfunctions.js";
-
-import {MainLands,CDAT} from "./utility/testdata.js";
+ 
 
 const funnyArray = [];
 for (let _i=0; _i < 64;_i++)
@@ -23,7 +23,7 @@ const GameBoard = () => {
 
     const {
         actions: { contextDimensions, contextMouseOver, contextMouseStop, changeGamePhase,
-        setTargets, checkAdjacentSpaces,
+        setTargets,  
         setCard,
         chooseCard, 
         endTurnTrigger,
@@ -31,16 +31,16 @@ const GameBoard = () => {
         opponentTurn, nextTurn,
         
         },
-        state: { playerResources, resourcesPlus,
+        state: { playerResources, resourcesPlus, CDAT,
             boardGrid, targetGrid, windowWidth,windowHeight, 
             cardWidth, cardHeight, mouseOver, mousingOver,boardWidth,boardHeight, 
-            localPlayer,
-            currentPlayer,
+            localPlayer, currentPlayer,playerPacks,
             playerColor,
             gamePhase,
             gamePhaseStep,
             currentCard,  
-            currentTurn, maxTurns,
+            currentTurn, maxTurns, handMouseOver,
+            turnMessages,
         },
     } = useContext(AppContext);
 
@@ -49,7 +49,7 @@ const GameBoard = () => {
         ()=>{
             if (gamePhase === 0 && currentCard != null)
             { 
-              setTargets(checkAdjacentSpaces());
+              setTargets();
             }
             else
             {
@@ -62,11 +62,11 @@ const GameBoard = () => {
     useEffect( ///for end turn stuff
     ()=>{
         if (gamePhase === 1)
-        {
+        { 
             if (gamePhaseStep === 0)
             {
                 opponentTurn();
-                const _updateScore = setTimeout(()=>{  
+                const _updateScore = setTimeout(()=>{   
                     endTurnTrigger();
 
                     const _updateScore2 = setTimeout(()=>{ 
@@ -102,7 +102,7 @@ const GameBoard = () => {
                 <span>Turn {currentTurn}/{maxTurns}</span>
             </>) }
                <span style={{ filter:"drop-shadow(1px 0px 10px rgba(255,255,0,0.5)) drop-shadow(0px 0px 5px #ff7700)"}} ><span></span>
-               <CiSun color={"yellow"}/>Sun : {playerResources[localPlayer-1][0]}
+               <FaRegSun color={"yellow"}/>Sun : {playerResources[localPlayer-1][0]}
                { (gamePhase === 1 && gamePhaseStep === 1) && 
                ( <span> + {resourcesPlus[localPlayer-1][0]}</span>
                ) }</span>  
@@ -178,7 +178,7 @@ const GameBoard = () => {
                                                     top:`${_y*(cardHeight+1)+4}px`,     
                                                 }}>
                                                 { (mouseOver[0] == indexX && mouseOver[1] === _y) &&( 
-                                                    <CardTooltip key={`tt`+String(indexX)+"-"+String(_y)}/> 
+                                                    <CardTooltip key={`tt`+String(indexX)+"-"+String(_y)} cardObj={boardGrid[indexX][_y]}/> 
                                                 )}
                                                     <BoardCard key={`card`+String(indexX)+"-"+String(_y)} cardObj={boardGrid[indexX][_y]} posX={indexX} posY={_y} />
                                                 
@@ -205,27 +205,104 @@ const GameBoard = () => {
 
                 <PlayerHand   {...( gamePhase === 1 ?{className:"hidehand"}:{})}  >  
                     <PlayerHandBG />
-                    <PlayerHandTitle>  
+                    <PlayerHandTitle style={{fontSize:`${cardHeight}px`}}>  
                         Hand
                     </PlayerHandTitle>
-                    
-                    <PlayableCard
-                    cardObj={{
-                        ...CDAT.MLAND[CDAT.MLANDI.desert],
-                        player:currentPlayer,
-                        cardId:1,
-                        name:"desert",
-                        type:"land",
-                        color:"",
-                        desc:"",
-                    }}
-                    /> 
+                            
+                            <HandCardSubtitle style={{fontSize:`${cardHeight/3.4}px`}}>BASIC LANDS</HandCardSubtitle>
+                            <HandCardGrid>
+                            {CDAT.MLAND.map((_card,_cardIndex)=>{
+                                let _cardo = _card;
+                                if (playerPacks[localPlayer][0].basicReplaceLand.replacing === _card.name.toLowerCase())
+                                {_cardo = playerPacks[localPlayer][0].basicReplaceLand}
+                                else if (playerPacks[localPlayer][1].basicReplaceLand.replacing === _card.name.toLowerCase())
+                                {_cardo = playerPacks[localPlayer][1].basicReplaceLand}
+                                return(
+                                    <PlayableCard
+                                    cardObj={{
+                                        ..._cardo,
+                                        player:currentPlayer, 
+                                    }} /> )
+                            })}  
+                            </HandCardGrid>
+                            <HandCardSubtitle style={{fontSize:`${cardHeight/3.4}px`}}>BASIC LANDMARKS</HandCardSubtitle>
+                            <HandCardGrid>
+                            {CDAT.MFEAT.map((_card,_cardIndex)=>{
+                               
+                                return(
+                                    <PlayableCard
+                                    cardObj={{
+                                        ..._card,
+                                        player:currentPlayer, 
+                                    }} /> )
+                            })}  
+                            </HandCardGrid>
+                            <HandCardSubtitle style={{fontSize:`${cardHeight/3.4}px`}}>{playerPacks[localPlayer][0].packName}</HandCardSubtitle>
+                            <HandCardGrid>
+                            <PlayableCard gridSpan={2} cardObj={{  ...playerPacks[localPlayer][0].greatLand,  player:currentPlayer,}} />
+                            {playerPacks[localPlayer][0].packCards.map((_card,_cardIndex)=>{
+                                if (_card.canCast)                                
+                                {
+                                return(
+                                    <PlayableCard 
+                                    cardObj={{
+                                        ..._card,
+                                        player:currentPlayer, 
+                                    }} /> )}
+                            })}   
+ 
+                            </HandCardGrid>
+                            <HandCardSubtitle style={{fontSize:`${cardHeight/3.4}px`}}>PACK 2</HandCardSubtitle>
+                            <HandCardGrid>
+                            <PlayableCard gridSpan={2} cardObj={{  ...playerPacks[localPlayer][1].greatLand,  player:currentPlayer,  }} />
+                            {playerPacks[localPlayer][1].packCards.map((_card,_cardIndex)=>{
+                                if (_card.canCast)                                
+                                {
+                                return(
+                                    <PlayableCard 
+                                    cardObj={{
+                                        ..._card,
+                                        player:currentPlayer, 
+                                    }} /> )}
+                            })}  
+                            </HandCardGrid>
+                            </PlayerHand>
 
-                </PlayerHand>
+                            <GameMessageDiv 
+                            {...( gamePhase === 1 ?{className:"activated"}:{})} >
+                                {turnMessages.map((_message,_messageIndex)=>{
+
+                                    return(
+                                        <p>{_message}</p>
+                                    )
+                                })}
+                            </GameMessageDiv>
+                             
+                                {handMouseOver != null && (
+                                <HandTooltip 
+                                cardObj={handMouseOver}/>
+                                    )}
         </MainGameDiv>
     )
 
 }
+
+const GameMessageDiv = styled.div`
+position: absolute;
+font-size: 34px;
+top:55px;
+background-color: rgba(0,0,0,0.7);
+color:white;
+transition: opacity 1000ms ease-in;
+padding:50px;
+z-index: 200;
+.activated {
+    background-color: blue;
+    transition: opacity none;
+    opacity: 1;
+}
+
+`
 
 const PlacementAnim = keyframes`   
   50%{   
@@ -257,6 +334,7 @@ const PlacementHoverAnim = keyframes`
   `
 
 const PlacementIndicator = styled.div` 
+position: absolute;
 padding:5px;
 font-weight:bold;
 color:white;
@@ -264,17 +342,16 @@ cursor:pointer;
 font-family: Arial, Helvetica, sans-serif;
 font-size:20px;
 transform: scale(0.8);
-position: absolute;
 width: 100%;
 height:100%;
 background-color: rgba(255,0,0,0.1);
-z-index: 10;
+z-index: 20;
 transition: all 100ms ease-out;
 box-shadow: rgba(255, 255, 255,0.8) 0px 0px 0px 3px;
 border-radius: 10px;
 animation: ${PlacementAnim} 5s infinite;
 &:hover{
-    z-index: 20;
+    z-index: 30;
     transition: all 100ms ease-out;
     transform: scale(1.2);
     animation: ${PlacementHoverAnim} 5s infinite; 
@@ -389,14 +466,14 @@ const BoardBorderAnim = keyframes`
  
 
 
-const PlayerHand = styled.div` 
+const PlayerHand = styled.div`  
 position: relative;
 font-size: 50px;
 color:#FFFFFF;
 background-color: #222222;
 opacity: 1;
-min-width:20%;
-min-height:100%; 
+min-width:28%;
+min-height:80%; 
 box-shadow: rgb(23, 23, 23) 0px 0px 0px 3px, rgb(255, 255, 255) 0px 0px 0px 5px,  rgb(23, 23, 23) 0px 0px 0px 7px; 
 right: 0;
 transition: all 200ms ease-in;
@@ -417,6 +494,23 @@ const Separator = styled.div`
 flex:1;
 //background-color: yellow;
 opacity: 0.1;
+`
+
+const HandCardSubtitle = styled.p`
+text-shadow: 3px 3px black;
+text-align: center;
+font-size: 34px;
+font-family: warlocks-ale;
+opacity: 1;
+`
+
+const HandCardGrid = styled.div`   
+margin:5px;
+gap:2px;
+display: grid; 
+
+grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; 
+
 `
 
 const PlayerHandTitle = styled.div`

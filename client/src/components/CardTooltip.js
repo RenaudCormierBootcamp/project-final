@@ -18,7 +18,7 @@ const CardTooltip = () => {
 
 
    
-
+    const _cardObj = boardGrid[mouseOver[0]][mouseOver[1]];
 
     return (
         <>
@@ -29,7 +29,7 @@ const CardTooltip = () => {
             >
                
          <TooltipDiv  {...(mousingOver === false ?{className: "hidetooltip"}:{}) }
-            style={{width:`${cardWidth*2.5}px`, minHeight:`${cardHeight*6-40}px`, maxHeight:`${cardHeight}px`,top:`-${mouseOver[1]*cardHeight/1.4}px`}}
+            style={{minWidth:`${cardWidth*2.5}px`,maxWidth:`${cardWidth*2.5}px`, minHeight:`${cardHeight*6-40}px`, maxHeight:`${cardHeight}px`,top:`-${mouseOver[1]*cardHeight/1.4}px`}}
              
             >
                  <Insetter/>
@@ -49,12 +49,16 @@ const CardTooltip = () => {
                         <div> 
                         </div>
                         <div>
-                            Feature 1
+                            {_cardObj.feature1 != null && (
+                                <>{_cardObj.feature1.name}</>
+                            )}
                         </div>
                         <div> 
                         </div>
                         <div>
-                            Feature 1
+                        {_cardObj.feature2 != null && (
+                                <>{_cardObj.feature1.name}</>
+                            )}
                         </div>
                     </PaddedDiv>)} 
                     </TooltipDiv> 
@@ -109,7 +113,7 @@ const TooltipDiv = styled.div`
     top:5%;  
     background-color: blue; 
     transition: all 400ms ease-out;
-    z-index: 50;  
+    z-index: 51;  
     &.hidetooltip{ 
         opacity: 0; 
         transition: none;

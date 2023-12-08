@@ -8,6 +8,8 @@ import col from './utility/colors';
 //components section
 import Navbar from './Navbar';
 import GameBoard from './GameBoard';
+import StartGameMenu from './StartGameMenu';
+import MainMenu from './MainMenu';
 import CardMaker from './CardMaker';
 import { AppContext } from './AppContext';
  
@@ -17,7 +19,8 @@ function App() {
 
   const {
     actions: { contextDimensions, setMousePos },
-    state: { windowWidth,windowHeight },
+    state: { windowWidth,windowHeight, 
+      gameStarted },
 } = useContext(AppContext);
 
   ///keep track of resizing the window
@@ -42,9 +45,14 @@ function App() {
         <Routes>
         <Route path="/" element={
             <div> 
-          <StarBackground>
-          </StarBackground>
-              <GameBoard/>
+               <StarBackground>
+               </StarBackground>
+              {gameStarted && (
+                <GameBoard/> 
+              ) || (
+                <StartGameMenu/>
+              )}
+               
             </div>
           }/>
           <Route path="/cardMake" element={

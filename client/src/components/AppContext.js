@@ -1,29 +1,22 @@
-import { createContext,useReducer } from "react";  
-import {CARDFUNC} from "./game/cardfunctions.js"; 
+import { createContext,useReducer } from "react";   
 import { Navigate } from "react-router-dom";
 
-import {CDAT,MainLands,shapeData} from "./utility/testdata.js";
-
-const {TRIGGER} = CARDFUNC;
+import {CDATA} from "./utility/testdata.js";
+import {CFUNC} from "./game/cardfunctions.js";
+ 
 
 const boardSize = 8;
 const numPlayers = 2;
+ 
 
-const cardTriggers = {
-  everyTurn: "every turn ",
-  onPlay: "on play ",
-  afterTimer: "after $ turns ",
-  whenAdjacentPlayed: "when an adjacent land is added "
-}
-
-const templateNewCard = {...CDAT.landTemplate }
+const templateNewCard = {...CDATA.landTemplate }
 
 const templateReplaceLand = {
-  ...CDAT.landTemplate,
+  ...CDATA.landTemplate,
 }
 
 const templateGreatLand = {
-  ...CDAT.landTemplate,
+  ...CDATA.landTemplate,
 }
 
 const templatePack = {
@@ -50,10 +43,6 @@ for (let _i =0; _i < boardSize;_i++)
   } 
   const _targetGrid = emptyGrid.slice().map(_i=>_i.slice()); 
 
-  _startGrid[3][3]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:1,cardId:1,posX:3,posY:3, }
-  _startGrid[3][4]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:2,cardId:1,posX:3,posY:4, }
-  _startGrid[4][3]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:2,cardId:1,posX:4,posY:3, }
-  _startGrid[4][4]= {...CDAT.MLAND[CDAT.MLANDI.desert], player:1,cardId:1,posX:4,posY:4, } 
 
    
 
@@ -67,7 +56,9 @@ const initialState = {
     playerHand: [
       [],[]
     ],
+    CDAT:{...CDATA,CFUNC:CFUNC},
     currentTurn: 1,
+    turnMessages: [],
     maxTurns: 20,
     templateNewCard:templateNewCard,
     playerResources: [[10,0,0],[10,0,0]],
@@ -76,11 +67,10 @@ const initialState = {
     boardGrid: _startGrid,
     targetGrid: _targetGrid,
     targetList: [],
+    takenList: [],
     mouseOver: [0,0],
     mousingOver: false,
     currentCard: null,
-    currentPlayer:1,
-    localPlayer: 1,
     gamePhase: 0,
     gamePhaseStep: 0,
     playerColor: ["red","blue"],
@@ -94,9 +84,7 @@ const initialState = {
     mouseY: 0, 
     userInfo: {username:null}, 
     currentEditCardIndex: 0,
-    currentEditPackIndex: 0,
-     
-    cardTriggers:cardTriggers,
+    currentEditPackIndex: 0, 
 
     customPacks: [], 
     copyCard: null,
@@ -105,8 +93,20 @@ const initialState = {
       name:"Basic Cards",
       basicReplaceLand: null,
       greatLand: null,
-      packCards: [...CDAT.MainLands],
+      packCards: [...CDATA.MainLands],
     },
+
+    
+    currentPlayer:1,
+    localPlayer: 1,
+
+    startGameSelectedPacks:[null,null],
+    startGamePackCategory:"default",
+    gameStarted:false,
+    gameStatus:null,
+    handMouseOver:null,
+
+    playerPacks : [2,[null,null],[null,null]],
   };
 
  
@@ -127,9 +127,37 @@ const reducer = (state, action) => {
     }
     case 'set-card': {  
       const _tempGrid = state.boardGrid.slice();
-      action.data.card.posX = action.data.posX;
-      action.data.card.posY = action.data.posY;
-      _tempGrid[action.data.posX][action.data.posY] = action.data.card;
+      const _targetCard = _tempGrid[action.data.posX][action.data.posY];
+      if (action.data.card.category === "feature")
+      {
+        const _card = {...action.data.card};
+        if (_targetCard.feature1 === null)
+        {
+          _targetCard.feature1 = _card;
+        }
+        else if (_targetCard.feature2 === null)
+        {
+          _targetCard.feature2 = _card;
+        } 
+      }
+      else
+      { 
+        
+        action.data.card.posX = action.data.posX;
+        action.data.card.posY = action.data.posY;
+        if (_targetCard.cardId === null)
+        {
+          action.data.card.feature1 = null;
+          action.data.card.feature2 = null;
+        }
+        else
+        {
+          action.data.card.feature1 = _targetCard.feature1;
+          action.data.card.feature2 = _targetCard.feature2;
+        }
+        _tempGrid[action.data.posX][action.data.posY] = {...action.data.card};
+      }
+      
 
       return {
         ...state,    
@@ -138,7 +166,14 @@ const reducer = (state, action) => {
 
     } 
 
+    case 'hand-mouse-over': {   
 
+      return {
+        ...state,    
+        handMouseOver:action.data,
+      } 
+
+    }
 
     case 'context-mouse-over': {   
 
@@ -205,15 +240,50 @@ const reducer = (state, action) => {
     }
 
     case 'set-targets': {
+      const _card = state.currentCard; 
       const _tempGrid = emptyGrid.slice().map(_i=>_i.slice()); 
-      for (let _i =0; _i < action.data.length; _i++)
-      {
-        const _card = action.data[_i];
-        _tempGrid[_card.posX][_card.posY] = 1;
-      } 
+      if (_card != null)
+      { 
+          const _adjGrid = state.CDAT.CFUNC.checkAdjacentSpaces(state)
+          if (_card.category === "land" || _card.category === "basic land" || _card.category === "basic replace" || (_card.category === "great land" && _card["can be used on"][0] ) )
+          {
+            for (let _i =0; _i < _adjGrid.length; _i++)
+            {
+              const _card = _adjGrid[_i];
+              _tempGrid[_card.posX][_card.posY] = 1;
+            }  
+          }
+           if (_card.category === "feature" || _card.category === "land upgrade" || (_card.category === "great land" && ( _card["can be used on"][1] ||  _card["can be used on"][2] ||  _card["can be used on"][3] ||  _card["can be used on"][4] ||  _card["can be used on"][5] ||  _card["can be used on"][6] ) ) )  ///if it's a feature or upgrade
+          {   
+            for (let _i =0; _i < boardSize; _i++)
+            {
+              for (let _j=0; _j < boardSize; _j++)
+              { 
+                const _checkCard = state.boardGrid[_i][_j]
+                if (_checkCard.cardId && _checkCard.player === state.localPlayer)
+                { 
+                  for (let _k = 1; _k < 7; _k++)
+                  { 
+                    if (_card["can be used on"][_k] && _checkCard["land types"].indexOf(state.CDAT.MLANDRI[_k-1]) != -1)
+                    { 
+                      if ((_card.category === "feature" && _checkCard.category != "great land" && (_checkCard.feature1 === null || _checkCard.feature2 === null))
+                          || (_card.category === "land upgrade" && _checkCard.category != "great land" && _checkCard.category != "land upgrade"  )
+                          || (_card.category === "great land" && _checkCard.category != "great land" && _checkCard.category != "land upgrade"  ))
+                      {_tempGrid[_i][_j] = 1;}
+                      
+                    }
+                  } 
+                }
+              }
+            }
+          } 
+      }
+
+      state.CDAT.CFUNC.cardConditions(state,_tempGrid,_card);
+
       return{ 
         ...state,
-        targetGrid: _tempGrid,
+        targetGrid: _tempGrid, 
       }
 
     }
@@ -240,6 +310,7 @@ const reducer = (state, action) => {
 
       const _newPack = {
         ...templatePack,
+        packIndex: state.customPacks.length,
       };
       let _check = true;
       let _index = 0;
@@ -263,19 +334,21 @@ const reducer = (state, action) => {
           }
         } 
       }
-      _newPack.basicReplaceLand = {...templateReplaceLand, name:"new replace land", category:"basic replace",cardId:(_newPack.packName+"replace").replace(" ","0"),
+      _newPack.basicReplaceLand = {...templateReplaceLand, name:"new replace land", category:"basic replace",cardId:(_newPack.packName+"replace").replaceAll(" ","!"),
       requirements: [{...templateReplaceLand.requirements[0]}],
       patterns: [{...templateReplaceLand.patterns[0], shapes:[{...templateReplaceLand.patterns[0].shapes[0]}]}], 
       cost: [...templateReplaceLand.cost],
         "land types": [...templateReplaceLand["land types"]],
         "feature types": [...templateReplaceLand["feature types"]],
+        "can be used on": [...templateReplaceLand["can be used on"]],
       };
-      _newPack.greatLand = {...templateGreatLand, patterns:[], name:"new great land",category:"great land",cardId:(_newPack.packName+"great").replace(" ","0"),
+      _newPack.greatLand = {...templateGreatLand, patterns:[], name:"new great land",category:"great land",cardId:(_newPack.packName+"great").replaceAll(" ","!"),
         requirements: [{...templateGreatLand.requirements[0]}],
         patterns: [{...templateGreatLand.patterns[0], shapes:[{...templateGreatLand.patterns[0].shapes[0]}]}], 
         cost: [...templateGreatLand.cost],
         "land types": [...templateGreatLand["land types"]],
         "feature types": [...templateGreatLand["feature types"]],
+        "can be used on": [...templateGreatLand["can be used on"]],
     };
       _customPacks.push(_newPack) ; 
       console.log("cpack", state.customPacks.length);
@@ -285,6 +358,17 @@ const reducer = (state, action) => {
         customPacks: _customPacks,
         currentEditPack: _newPack,
       }
+    }
+
+    case 'get-basic-packs': {
+
+      const _basicCards = action.data.CDAT;
+      console.log("MLANDY",action.data.CDAT.MLAND);
+      return {
+        ...state,
+        CDAT: {..._basicCards,CFUNC:CFUNC} 
+      }
+
     }
 
     case 'change-edit-pack': {
@@ -299,9 +383,24 @@ const reducer = (state, action) => {
       }
     }
 
+    case 'load-edit-packs':{
+      console.log(action.data.body);
+
+      const _newPacks = [];  
+      for (let _i =0; _i < action.data.body.packNumber; _i++)
+      {
+        _newPacks.push(action.data.body["pack"+String(_i)]);
+      }
+      console.log("pack",_newPacks);
+      return {...state,
+        customPacks:_newPacks,
+      }
+    }
+
     case 'save-edit-pack': {
       const _customPacks = [...state.customPacks];
       _customPacks[state.currentEditPackIndex] = state.currentEditPack; 
+ 
 
       return {
         ...state,
@@ -333,12 +432,14 @@ const reducer = (state, action) => {
 
       const _editPack = state.currentEditPack;
       const _newCard = {...templateNewCard,
-        cardId: (state.currentEditPack.packName+String(_editPack.packCards.length-1)).replace(" ","_"),
+        cardId: (state.currentEditPack.packName+String(_editPack.packCards.length-1)).replaceAll(" ","_"),
         requirements: [{...templateNewCard.requirements[0]}],
         patterns: [{...templateNewCard.patterns[0], shapes:[{...templateNewCard.patterns[0].shapes[0]}]}], 
         cost: [...templateNewCard.cost],
+        effects: [...templateNewCard.effects],
         "land types": [...templateNewCard["land types"]],
         "feature types": [...templateNewCard["feature types"]],
+        "can be used on": [...templateNewCard["can be used on"]],
       }
       _editPack.packCards.push(
         _newCard,
@@ -371,6 +472,7 @@ const reducer = (state, action) => {
         cost: [...action.data.cost],
         "land types": [...action.data["land types"]],
         "feature types": [...action.data["feature types"]],
+        "can be used on": [...action.data["can be used on"]],
         cardId:"-EDITED",
       }
  
@@ -382,12 +484,13 @@ const reducer = (state, action) => {
 
       for (let _i =0; _i < action.data.effects.length ;_i++)
       {
-        const _resulty = [];
+        const _resulty = []; 
+        const _trigger = {...action.data.effects[_i].trigger};
         for (let _j =0; _j < action.data.effects[_i].results.length;_j++)
         {
-          _resulty.push(action.data.effects[_i].results[_j]) 
+          _resulty.push({...action.data.effects[_i].results[_j],value:[...action.data.effects[_i].results[_j].value]});
         }
-        _loadCard.effects.push({...action.data.effects[_i],results:_resulty});
+        _loadCard.effects.push({...action.data.effects[_i],results:_resulty,trigger:_trigger});
       }
 
       for (let _i =0; _i < action.data.patterns.length ;_i++)
@@ -451,11 +554,12 @@ const reducer = (state, action) => {
       for (let _i =0; _i < _saveCard.effects.length ;_i++)
       {
         const _resulty = [];
+        const _trigger = {..._saveCard.effects[_i].trigger}; 
         for (let _j =0; _j < _saveCard.effects[_i].results.length;_j++)
         {
-          _resulty.push(_saveCard.effects[_i].results[_j]) 
+          _resulty.push({..._saveCard.effects[_i].results[_j],value:[..._saveCard.effects[_i].results[_j].value]}) 
         }
-        _tempCard.effects.push({..._saveCard.effects[_i],results:_resulty});
+        _tempCard.effects.push({..._saveCard.effects[_i],results:_resulty,trigger:_trigger});
       }
 
       for (let _i =0; _i < _saveCard.patterns.length ;_i++)
@@ -526,7 +630,7 @@ const reducer = (state, action) => {
       
       return {
           ...state, 
-          currentEditCard: {...state.copyCard,cardId:"-EDITED"},
+          currentEditCard: {...state.copyCard, category:state.currentEditCard.category, cardId:"-EDITED"},
         }
     }
 
@@ -575,7 +679,7 @@ const reducer = (state, action) => {
       const _req = state.currentEditCard.requirements[action.data.req];
       _req.type = action.data.value;
 
-      const _propertiesList = CDAT.CREQUIRE[state.currentEditCard.category][action.data.value];
+      const _propertiesList = state.CDAT.CREQUIRE[state.currentEditCard.category][action.data.value];
       const _newReqArray = []; 
       for (let _i = 0; _i < _propertiesList.length; _i++)
       {
@@ -626,7 +730,7 @@ const reducer = (state, action) => {
       }; 
       
       _editedCard.effects.push({
-                trigger:"none",
+                trigger:{name:"none",key:"none",value:0,location:"none"},
                 results:[],
             });
       return {
@@ -643,10 +747,9 @@ const reducer = (state, action) => {
           cardId:"-EDITED",
         }; 
         _editedCard.effects[action.data].results.push({
-                numberSet:"number",
-                numberUse:"none", 
-                numberValue:1,
-                numberPlus:0,
+            type:"none",
+            card:null,
+            value:[0,"none","none","none",0],
               })
         return {
           ...state,
@@ -684,6 +787,44 @@ const reducer = (state, action) => {
           currentEditCard:_editedCard,
         }
       }
+
+    case 'set-edit-effect':{
+      const _cardo = {...state.currentEditCard}
+      const _effects = [..._cardo.effects]; 
+
+      if (action.data.key === "trigger")
+      {
+        _effects[action.data.index].trigger = {...state.CDAT.CTRIGGER[action.data.value]}; 
+      }
+      else if (action.data.key === "triggervalue")
+      {
+        _effects[action.data.index].trigger.value = action.data.value;
+      }
+      else if (action.data.key === "resulttype")
+      {
+        _effects[action.data.index].results[action.data.resultIndex].type = action.data.value;
+      } 
+      else if (action.data.key === "resultcard")
+      {
+        _effects[action.data.index].results[action.data.resultIndex].card = action.data.value;
+      } 
+      else if (action.data.key === "resulttarget")
+      {
+        _effects[action.data.index].results[action.data.resultIndex].target = action.data.value;
+      } 
+      else if (action.data.key === "resultvalue")
+      {
+        _effects[action.data.index].results[action.data.resultIndex].value[action.data.resultValueIndex] = action.data.value;
+      } 
+      _cardo.effects = _effects;
+
+      return {
+          ...state,
+          currentEditCard:_cardo,
+        }
+
+
+    }
     ///-----
     ///card creation visual garbo
     case 'set-pattern-stat': { 
@@ -711,7 +852,7 @@ const reducer = (state, action) => {
       if (action.data.key === "type")
       {
         let _newArray = []
-        while (_newArray.length < shapeData[action.data.value].sizes)
+        while (_newArray.length < state.CDAT.SHAPEDAT[action.data.value].sizes)
         {
           _newArray.push(0);
         }
@@ -785,15 +926,15 @@ const reducer = (state, action) => {
 
     case 'add-shape':{
       const _pattern = state.currentEditCard.patterns[action.data.pattern];
-      const _keys = Object.keys(shapeData);
+      const _keys = Object.keys(state.CDAT.SHAPEDAT);
       let _sizeArray = [];
-      for (let _i =0; _i < shapeData[_keys[0]].sizes; _i++)
+      for (let _i =0; _i < state.CDAT.SHAPEDAT[_keys[0]].sizes; _i++)
       {
         _sizeArray.push(0.1);
       } 
 
       _pattern.shapes.push({
-        type: shapeData[_keys[0]].name,
+        type: state.CDAT.SHAPEDAT[_keys[0]].name,
         size: _sizeArray,
         offX: 0,
         offY: 0,
@@ -872,10 +1013,82 @@ const reducer = (state, action) => {
       }
     }
 
+    ////------game start stuff - -- 
 
+    case 'set-pack-category': { 
+      
+      return {
+        ...state, 
+        startGamePackCategory:action.data,
+      }
+    }
+
+    case 'set-game-packs': {
+      const _select = [...state.startGameSelectedPacks];
+
+      if (_select[0] === action.data)
+      {
+        _select[0]= null; 
+      }
+      else if (_select[1] === action.data)
+      {
+        _select[1]= null; 
+      }
+      else if (_select[0] === null)
+      {
+        _select[0]= action.data; 
+      }
+      else if (_select[1] === null)
+      { 
+        _select[1]= action.data; 
+      }
+
+      return {
+        ...state,  
+        startGameSelectedPacks:_select,
+      }
+      
+    }
+
+    case 'go-start-game': {
+
+      const _playerPacks = [...state.playerPacks];
+      _playerPacks[state.currentPlayer] = state.startGameSelectedPacks;
+
+      _playerPacks[2] = state.startGameSelectedPacks;
+ 
+      _startGrid[3][3]= {..._playerPacks[1][0].basicReplaceLand, player:1,cardId:1,posX:3,posY:3, feature1:null, feature2:null}
+      _startGrid[3][4]= {..._playerPacks[2][1].basicReplaceLand, player:2,cardId:1,posX:3,posY:4, feature1:null, feature2:null}
+      _startGrid[4][3]= {..._playerPacks[2][0].basicReplaceLand, player:2,cardId:1,posX:4,posY:3, feature1:null, feature2:null}
+      _startGrid[4][4]= {..._playerPacks[1][1].basicReplaceLand, player:1,cardId:1,posX:4,posY:4, feature1:null, feature2:null} 
+
+      return {
+        ...state,  
+        gameStarted:true,
+        playerPacks:_playerPacks,
+      }
+    }
+    case 'trigger-effect': { 
+      let _resource = [[...state.resourcesPlus[0]], [...state.resourcesPlus[1]]]; 
+      console.log("!dumb resources",_resource)
+      const _resPlus = action.data._newState.resourcesPlus;
+      _resource[0][0] += _resPlus[0][0];
+      _resource[1][1] += _resPlus[1][1];
+      _resource[0][2] += _resPlus[0][2];
+      _resource[1][0] += _resPlus[1][0];
+      _resource[0][1] += _resPlus[0][1];
+      _resource[1][2] += _resPlus[1][2];
+
+      return {
+        ...state, 
+      }
+
+    }
+    
     default: throw new Error(`Unrecognized action: ${action.type}`); ;
   }
-
+  
+  
     
 }
 ////REDUCERS END
@@ -897,7 +1110,15 @@ export const AppProvider = ({ children }) => {
         data: data,
         })
     }
+    
 
+    const setHandMouseOver = (data) =>{
+
+      dispatch({
+        type: "hand-mouse-over",
+        data: data,
+        })
+    }
     const contextMouseOver = (data) =>{
 
       dispatch({
@@ -993,80 +1214,56 @@ export const AppProvider = ({ children }) => {
     }
 
     const endTurnTrigger = (data) => {
+      let _stateUpdate = {...state};
       for (let _i = 0; _i < boardSize; _i++) ///TRIGGER every turn;
       {
         for (let _j=0; _j < boardSize; _j++)
         {
-          const _card = state.boardGrid[_i][_j];
+          const _card = state.boardGrid[_i][_j]; 
           if (_card.cardId != null) {
             for (let _f= 0; _f < _card.effects.length; _f++)
             {
-              const _effect = _card.effects[_f]
-              console.log("effect",_effect);
-              if (_effect.trigger === TRIGGER.everyTurn)
-              {
-                let _number = 0;
-                state.currentCard = _card;
-                state.currentPlayer = _card.player;
-                _number += _effect.numberSet[0](state,_effect.numberSet[1]);
-                console.log("number",_number);
-                _effect.numberUse[0](state,_number);
+              const _effect = _card.effects[_f] ;
+              if (_effect.trigger.name === state.CDAT.CTRIGGER.everyTurn.name)
+              { 
+                _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
               }
             }
+              if (_card.feature1 != null)
+              {
+                for (let _f= 0; _f < _card.feature1.effects.length; _f++)
+                {
+                  const _effect = _card.feature1.effects[_f] ;
+                  if (_effect.trigger.name === state.CDAT.CTRIGGER.everyTurn.name)
+                  { 
+                    _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                  }
+                }
+              }
+              if (_card.feature2 != null)
+              {
+                for (let _f= 0; _f < _card.feature2.effects.length; _f++)
+                { 
+                  const _effect = _card.feature2.effects[_f];
+                  if (_effect.trigger.name === state.CDAT.CTRIGGER.everyTurn.name)
+                  {  
+                    _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                  }
+                }
+              }
           }
         }
       }
-
+      dispatch({
+        type:"trigger-effect",
+        data:_stateUpdate,
+      })
+      
 
 
     }
 
-    const checkAdjacentSpaces =(boardCardArray=state.boardGrid,type="any",num=1,empty=true) => { 
-      const _tempArray = []; 
-      for (let _i =0; _i < boardSize; _i++)
-      {
-        for (let _j =0; _j < boardSize; _j++)
-        {
-          const _card = boardCardArray[_i][_j];
-          let _adj = 0;
-          const _cX = _card.posX;
-          const _cY = _card.posY; 
-          if (_i > 0){ 
-            if (state.boardGrid[_cX-1][_cY].cardId != null){
-              _adj+= 1;
-            }}
-          if (_j > 0){  
-            if (state.boardGrid[_cX][_cY-1].cardId != null){
-              _adj+= 1;
-            } 
-          }
-          if (_i < boardSize-1){  
-            if (state.boardGrid[_cX+1][_cY].cardId != null){
-              _adj+= 1;
-            } 
-          }
-          if (_j < boardSize-1){ 
-            if (state.boardGrid[_cX][_cY+1].cardId != null){
-              _adj+= 1;
-            } 
-          }
-          if (_adj >= num)
-          { 
-            if (empty && _card.cardId === null)
-            {
-              _tempArray.push(_card); 
-            }
-            else if (!empty && _card.cardId != null)
-            {
-              _tempArray.push(_card);  
-            }
-          }
-        }
-      }
-
-      return _tempArray;
-
-    } 
+    
 
     const newEditPack = (data) => {
 
@@ -1077,12 +1274,84 @@ export const AppProvider = ({ children }) => {
     }
 
     const saveEditPack = (data) =>{
+            let _status = "";
 
-      dispatch({
-        type:"save-edit-pack",
-        data:data
-      }) 
+            const _pack = {...data}
+
+            const _replace = _pack.basicReplaceLand;
+            _replace.cardId = (_pack.packName+"replace").replaceAll(" ","!");
+            const _great = _pack.greatLand;
+            _great.cardId = (_pack.packName+"great").replaceAll(" ","!");
+
+            
+            for (let _i =0; _i < _pack.packCards.length;_i++)
+            {
+              const _card = _pack.packCards[_i];
+              _card.cardId = (_pack.packName+"card"+String(_i)).replaceAll(" ","!"); 
+            }
+
+              fetch('/uploadPack',
+              {
+                  method: "POST", 
+                  body: JSON.stringify({...data}), 
+                  headers: {
+                  "Content-Type":"application/json",
+                },
+              })
+              .then((res)  =>{  
+                  _status = res.status;
+                  return res.json(); 
+              })
+              .then((res) => {   
+                if (_status === 200)
+                { 
+                  alert(res.message);
+                     dispatch({
+                       type: "save-edit-pack",
+                       data: res,
+                   }) 
+                }
+                else
+                {
+                  alert(res.message);
+                }  
+              })
+               .catch((error)=>{
+              console.log("error ",error);  
+              })  
     }
+
+    const loadEditPacks = (data) =>{
+      let _status = "";
+
+        fetch('/userPacks',
+        {
+            method: "GET",   
+            headers: {
+            "Content-Type":"application/json",
+          },
+        })
+        .then((res)  =>{  
+            _status = res.status;
+            return res.json(); 
+        })
+        .then((res) => {   
+          if (_status === 200)
+          { 
+               dispatch({
+                 type: "load-edit-packs",
+                 data: res,
+             }) 
+          }
+          else
+          {
+            alert(res.message);
+          }  
+        })
+         .catch((error)=>{
+        console.log("error ",error);  
+        })  
+}
     
     const setEditPack = (data) =>{
       console.log("set edit ",data);
@@ -1176,6 +1445,14 @@ export const AppProvider = ({ children }) => {
         data:data,
       })
 
+    }
+
+    const setEditEffect = (data) =>{
+
+      dispatch({
+        type:"set-edit-effect",
+        data:data,
+      })
     }
 
     ///pattern etc
@@ -1315,11 +1592,11 @@ export const AppProvider = ({ children }) => {
     }
 
     const opponentTurn = (data) => {
-        const _possibleTargets = checkAdjacentSpaces();
+        const _possibleTargets = state.CDAT.CFUNC.checkAdjacentSpaces(state);
         let _rando = Math.floor(Math.random()*_possibleTargets.length); 
         const _targetSpace = _possibleTargets[_rando];
         setCard({posX:_targetSpace.posX,posY:_targetSpace.posY,card:{
-                        ...CDAT.MLAND[CDAT.MLANDI.desert],
+                        ...state.CDAT.MLAND[state.CDAT.MLANDI.desert],
                         player:2,
                         cardId:1, 
         }})
@@ -1366,8 +1643,7 @@ export const AppProvider = ({ children }) => {
               })
             .catch((error)=>{
               console.log("error ",error);  
-              })
-
+              }) 
     }
 
     const attemptLogin = async (data) => { 
@@ -1429,6 +1705,7 @@ export const AppProvider = ({ children }) => {
               type: "attempt-login",
               data: res.body,
               }) 
+              loadEditPacks();
           }
           else if (_status >= 300)
           {
@@ -1478,6 +1755,59 @@ export const AppProvider = ({ children }) => {
       
     } 
 
+
+    const getBasicPacks = async (data) =>{ 
+      console.log("start")
+      fetch('/basicPacks',
+        {
+            method: "GET",  
+            headers: {
+                "Content-Type":"application/json",
+              },
+        })
+        .then((res)  =>{   
+            return res.json(); 
+        })
+        .then((res) => {     
+              dispatch({
+                type: "get-basic-packs",
+                data: res.body,
+                });
+        })
+      .catch((error)=>{
+        console.log("error ",error);  
+        }) 
+
+    }
+
+    ///bookmarkStartGame
+    /// ---------------------------- start game menu---------------------------------------------
+    /// -----------------------------------------------------------------------------------------
+    
+    
+    const setPackCategory =(data) =>{
+      dispatch({
+        type:"set-pack-category",
+        data:data,
+      })
+    }
+
+    const setGamePacks =(data) =>{ 
+      dispatch({
+        type:"set-game-packs",
+        data:data,
+      })
+    }
+
+    const goStartGame = (data) =>{
+      console.log("cat magic")
+      dispatch({
+        type:"go-start-game",
+        data:data,
+      })
+    }
+
+
     ///bookmarkReturn
     return (
         <AppContext.Provider
@@ -1492,11 +1822,11 @@ export const AppProvider = ({ children }) => {
               setMousePos,
               contextMouseOver,
               contextMouseStop,
+              setHandMouseOver,
 
               changeGamePhase,
 
-              setTargets,
-              checkAdjacentSpaces,
+              setTargets, 
 
               tallyPoints,
               updatePoints,
@@ -1506,8 +1836,9 @@ export const AppProvider = ({ children }) => {
               nextTurn,
               //---- card editor etc --
               setCopyCard,pasteCopyCard,
-              newEditCard,loadEditCard,saveEditCard,setEditCard,setEditCardIndex,deleteEditCard,
-              changeEditPack,newEditPack,setEditPack,saveEditPack,setEditPackIndex,
+              newEditCard,loadEditCard,saveEditCard,setEditCard,setEditCardIndex,deleteEditCard,setEditEffect,
+              changeEditPack,newEditPack,setEditPack,setEditPackIndex,
+              saveEditPack,loadEditPacks,
               //functional
               addEffect,deleteEffect,addResult,removeResult,
               setRequirementType, setRequirementValue,addRequirement,deleteRequirement,resetRequirements,
@@ -1520,7 +1851,11 @@ export const AppProvider = ({ children }) => {
               addShape,
               deleteShape,
 
+              ///Game Menu
+              setPackCategory, setGamePacks,
+              goStartGame,
               //---- server etc -----
+              getBasicPacks,
                   
               newRegister, 
               attemptLogin,

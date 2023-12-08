@@ -9,8 +9,9 @@ import col from './utility/colors';
 const Navbar = () => {
 
     const {
-        actions: { newRegister, attemptLogin, attemptAutoCookieLogin, logOut },
-        state: { windowWidth,windowHeight, userInfo },
+        actions: { newRegister, attemptLogin, attemptAutoCookieLogin, logOut, 
+            getBasicPacks,},
+        state: { windowWidth,windowHeight, cardHeight, userInfo },
     } = useContext(AppContext);
 
     const [displayLogin,setDisplayLogin] = useState(0);
@@ -29,18 +30,19 @@ const Navbar = () => {
 
     useEffect(()=>{
         attemptAutoCookieLogin();
+        getBasicPacks();
     },[])
 
     return (
-        <MainNavbarDiv>
+        <MainNavbarDiv style={{height:`${cardHeight/3}px`}} >
             {userInfo.username === null && (
             <UserInfo style={{width:`${windowWidth/9}px`}}> 
-                <p>NOT LOGGED IN</p>
-                <p><LoginButton
+                <p>NOT LOGGED IN  
+                <LoginButton
                 onClick={()=>{
                     setDisplayLogin(1);
                 }}
-                >Log in</LoginButton></p>
+                >Log in</LoginButton> </p>
                 {displayLogin > 0 && (
                     <LoginPopup>
                         <p>User/email:   <LoginInput type="text" onChange={(event)=>{setUsername(event.target.value)}}></LoginInput></p>
@@ -100,21 +102,25 @@ const Navbar = () => {
             </>)}
 
 
-            <NavLink><Link to="./">Game</Link></NavLink>
-            <NavLink><Link to="./cardMake">Make Cards</Link></NavLink>
-            <div>Match history</div>
-            <div>Secret admin page?</div>
-            <div style={{visibility:"hidden"}}>Just a separator</div>
+            <NavLink><Link to="./"><LinkHover>Game</LinkHover></Link></NavLink>
+            <NavLink><Link to="./cardMake"><LinkHover>Make Cards</LinkHover></Link></NavLink>
+            <NavLink>Match history</NavLink>
+            <NavLink>Weather:</NavLink>
+            <NavLink style={{visibility:"hidden"}}>Just a separator</NavLink>
         </MainNavbarDiv>
     )
 
 }
 const NavLink = styled.div`
+flex:1;
+`
+const LinkHover = styled.span`
 
 &:hover{
     color:rgb(255,120,0);
     text-decoration: underline;
-}`
+}
+`
 
 
 const LoginInput = styled.input`
@@ -201,6 +207,7 @@ z-index: 99;
  
 `
 const UserInfo = styled.div`
+flex:2;
 padding:20px;
 
 `

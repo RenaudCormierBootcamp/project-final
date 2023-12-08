@@ -40,15 +40,19 @@ const createUser = async (req, res) => {
             userInfo.lowerusername = userInfo.username.toLowerCase();
             userInfo.email = userInfo.email.toLowerCase();
             userInfo.password = _hashPassword;
-            userInfo.createdPacks = [];
+            userInfo.createdPacks = 0;
             userInfo.currentSaveGame = { game:null };
             userInfo.userLevel = 0;
             userInfo.gamerRank = 0; 
+            userInfo.creatorTeam = 0; 
              
             let _cookieSession = userInfo.username+"_"+_hashEmail;
              
             const _newUser = await db.collection("users").insertOne(userInfo);
-              
+
+            const db2 = client.db("Cards");
+            const _newPack = await db2.collection("userCards").insertOne({user:userInfo.username,packNumber:0});
+
             res.cookie('session', _cookieSession, 
                 { httpOnly:true,sameSite:"Strict" }
             ); 

@@ -6,7 +6,7 @@ const CTRIGGER = {
     afterTimer: {name:"after X turns", key:"afterTimer", value:0},
     whenAdjacentPlayed: {name:"when an adjacent land is added", key:"whenAdjacentPlayed",value:"landType"}
   }
-
+  
   const EFFECTPROP = {
     number:{name:"number",values:1,value:0,card:null,location:[]},
     locationLand:{name:"location",value:0,card:null,location:["adjacent","around","adjacent to all","around all"]},
@@ -1145,4 +1145,4 @@ const CDATA = {
 }
  
 
-export {CDATA} 
+module.exports = CDATA

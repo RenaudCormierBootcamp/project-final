@@ -3,8 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { SketchPicker } from 'react-color'; 
 import { useRef } from 'react';
 import { useNavigate } from "react-router-dom";
-import {CARDFUNC} from "./game/cardfunctions.js"; 
-import {CDAT,shapeData} from "./utility/testdata.js";
+import {CARDFUNC} from "./game/cardfunctions.js";  
 import { Link } from "react-router-dom";
 
 import { AppContext } from "./AppContext.js";
@@ -18,11 +17,11 @@ const CardMaker = () => {
 
     const {
         actions: {  
-            newEditPack, changeEditPack,setEditPack,saveEditPack,
+            newEditPack, changeEditPack,setEditPack,saveEditPack,loadEditPacks,
             setEditCardIndex,setEditPackIndex,
             loadEditCard,saveEditCard,deleteEditCard,
             setCopyCard,pasteCopyCard,
-            newEditCard, setEditCard, setPatternStat, setShapeStat,setShapeSize,
+            newEditCard, setEditCard, setPatternStat, setShapeStat,setShapeSize,setEditEffect,
             addPattern,deletePattern,addShape,deleteShape,
             setRequirementType,setRequirementValue, addRequirement,deleteRequirement,resetRequirements,
             addEffect,deleteEffect,addResult,removeResult
@@ -31,6 +30,7 @@ const CardMaker = () => {
             currentEditPack, currentEditCard,
             cardWidth, cardHeight, windowHeight,boardWidth,boardHeight,
             copyCard,
+            CDAT
         },
     } = useContext(AppContext);
 
@@ -49,18 +49,12 @@ const CardMaker = () => {
         cardName.current.value = currentEditCard.name;
     },[currentEditCard])
 
-    useEffect(()=>{
-        if (customPacks.length > 0)
-        {
-            setEditPackChooser(customPacks[customPacks.length-1].packName);  
-        }
-        else
-        {
+    useEffect(()=>{ 
             setEditPackChooser("BASIC CARDS");
             loadEditCard(CDAT.MainLands[0]);
-            setEditCardIndex(0);
-        }
-    } , [])
+            setEditCardIndex(0); 
+            handleChangePack({target:{value:0,selectedIndex:0}});
+    } , [CDAT])
 
     useEffect(()=>{
         if (newPacking)
@@ -83,9 +77,9 @@ const CardMaker = () => {
                         name:"BASIC CARDS",
                         basicReplaceLand: null,
                         greatLand: null,
-                        packCards: [...CDAT.MainLands],
+                        packCards: [...CDAT.MLAND, ...CDAT.MFEAT],
                     });
-                    loadEditCard(CDAT.MainLands[0]);
+                    loadEditCard(CDAT.MLAND[0]);
                     setEditCardIndex(0);
                     setEditPackChooser("BASIC CARDS");
                     setEditablePack(false);
@@ -125,9 +119,8 @@ const CardMaker = () => {
                     return(<option>Default: {_pack.packName}</option>)
                })} 
 
-                {customPacks.map((_pack,_packIndex)=>{
-
-                return(<option>{_pack.packName}</option>)
+                {customPacks.map((_pack,_packIndex)=>{ 
+                    return(<option>{_pack.packName}</option>)
                 })} 
 
                </select>
@@ -144,10 +137,9 @@ const CardMaker = () => {
                     }
                 if (!_checker)
                 {
-                    saveEditPack(); 
+                    saveEditPack({...currentEditPack});
                     setPackModified(false); 
-                    setEditPackChooser(currentEditPack.packName);
-
+                    setEditPackChooser(currentEditPack.packName); 
                 }
                }}
                 {...( editablePack && (!packModified || cardModified) ?{disabled:true,className:"disabled"}:{})} 
@@ -155,7 +147,8 @@ const CardMaker = () => {
                
                <MiniAddRequirementButton {...( editablePack && ( !packModified || cardModified) ?{disabled:true,className:"disabled"}:{})}
                onClick={(event)=>{
-
+                     loadEditPacks();
+                     setPackModified(false);
                }}
                >Discard</MiniAddRequirementButton>
               </Link> </p>
@@ -240,6 +233,19 @@ const CardMaker = () => {
                         <EditingCard style={{width:`${cardWidth}px`,height:`${cardHeight}px`}}>EDITING <p>save/discard</p></EditingCard>
                         )}
                              <BoardCard cardObj={currentEditPack.greatLand} />
+
+                            
+                             <IconDrawContainDiv style={{filter:`drop-shadow(1px 1px 0 ${currentEditPack.greatLand.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditPack.greatLand.iconOutline}) drop-shadow(1px -1px 0 ${currentEditPack.greatLand.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditPack.greatLand.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                            <IconDrawDiv 
+                            style={{ mask:`url(${CDAT.iconSources[currentEditPack.greatLand.mainIconCat][currentEditPack.greatLand.mainIcon].src}) no-repeat center/contain`
+                                    ,WebkitMask:`url(${CDAT.iconSources[currentEditPack.greatLand.mainIconCat][currentEditPack.greatLand.mainIcon].src}) no-repeat center/contain`
+                                    ,background:`linear-gradient(${currentEditPack.greatLand.mainIconGradientDirection}deg, ${currentEditPack.greatLand.mainIconColor} 0%, ${currentEditPack.greatLand.mainIconGradient} 100%)` 
+                                    }}
+    
+                                    
+    
+                            ></IconDrawDiv> </IconDrawContainDiv>
+
                         </CardDisplay>
                     <CardTitle style={{color:"yellow"}}>{currentEditPack.greatLand.name}</CardTitle>
                 
@@ -267,7 +273,37 @@ const CardMaker = () => {
                                         {!editablePack && (<>viewing built-in</>) || (<><p>EDITING</p> <p>save/discard</p></>)} 
                                         </EditingCard>
                                     )}
-                                     <BoardCard cardObj={_card} />
+
+                                    {_card.category === "feature" && (
+                                        <>
+                                            <FeatureIconContainDiv style={{left:`${cardHeight/13}px`,top:`${cardHeight/8}px`,
+                                            filter:`drop-shadow(1px 1px 0 ${_card.iconOutline}) drop-shadow(-1px -1px 0 ${_card.iconOutline}) drop-shadow(1px -1px 0 ${_card.iconOutline}) drop-shadow(-1px 1px 0 ${_card.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                                                <IconDrawDiv 
+                                                style={{ mask:`url(${CDAT.iconSources[_card.mainIconCat][_card.mainIcon].src}) no-repeat center/contain`
+                                                        ,WebkitMask:`url(${CDAT.iconSources[_card.mainIconCat][_card.mainIcon].src}) no-repeat center/contain`
+                                                        ,background:`linear-gradient(${_card.mainIconGradientDirection}deg, ${_card.mainIconColor} 0%, ${_card.mainIconGradient} 100%)` 
+                                                        }}
+                        
+                                                        
+                        
+                                                ></IconDrawDiv> </FeatureIconContainDiv>
+                                                <FeatureIconContainDiv style={{right:`${cardHeight/13}px`,bottom:`${cardHeight/8}px`,
+                                                filter:`drop-shadow(1px 1px 0 ${_card.iconOutline}) drop-shadow(-1px -1px 0 ${_card.iconOutline}) drop-shadow(1px -1px 0 ${_card.iconOutline}) drop-shadow(-1px 1px 0 ${_card.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                                                <IconDrawDiv 
+                                                style={{ mask:`url(${CDAT.iconSources[_card.mainIconCat][_card.mainIcon].src}) no-repeat center/contain`
+                                                        ,WebkitMask:`url(${CDAT.iconSources[_card.mainIconCat][_card.mainIcon].src}) no-repeat center/contain`
+                                                        ,background:`linear-gradient(${_card.mainIconGradientDirection}deg, ${_card.mainIconColor} 0%, ${_card.mainIconGradient} 100%)` 
+                                                        }}
+                        
+                                                        
+                        
+                                                ></IconDrawDiv> </FeatureIconContainDiv>
+                                        </>
+
+                                    ) || (<BoardCard cardObj={_card} />)}
+                                     
+
+
                                 </CardDisplay>
                             <CardTitle style={{color:"yellow"}}>{_card.name}</CardTitle>
                         
@@ -304,10 +340,72 @@ const CardMaker = () => {
             </PackFrame>
             <CardDetails>
                 
-            <SideGuy style={{minWidth:`${boardWidth/2.5}px`}}  >
-                <CoolSticky >
+            <SideGuy className="baboon" style={{minWidth:`${boardWidth/2.3}px`}}  >
+                <CoolSticky  style={{maxWidth:`${boardWidth/2.3}px`}} >
                     <CardDisplay style={{width:`${cardWidth*2}px`,height:`${cardHeight*2}px`}}>
-                        <BoardCard cardObj={currentEditCard} />
+                    {currentEditCard.category === "feature" && (
+                                        <>
+                                            <FeatureIconContainDiv style={{left:`${cardHeight/13}px`,top:`${cardHeight/8}px`,
+                                            filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                                                <IconDrawDiv 
+                                                style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                                        ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                                        ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                                        }}
+                        
+                                                        
+                        
+                                                ></IconDrawDiv> </FeatureIconContainDiv>
+                                                <FeatureIconContainDiv style={{right:`${cardHeight/13}px`,bottom:`${cardHeight/8}px`,
+                                                filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                                                <IconDrawDiv 
+                                                style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                                        ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                                        ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                                        }}
+                        
+                                                        
+                        
+                                                ></IconDrawDiv> </FeatureIconContainDiv>
+                                        </>
+
+                                    ) || (<BoardCard cardObj={currentEditCard} />)}
+                        {currentEditCard.category==="great land" && (
+                            <IconDrawContainDiv style={{filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                            <IconDrawDiv 
+                            style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                    }}
+    
+                                    
+    
+                            ></IconDrawDiv> </IconDrawContainDiv>
+                        )}
+                        {currentEditCard.category==="feature" && (
+                            <>
+                            <FeatureIconContainDiv style={{left:`${cardHeight/13}px`,top:`${cardHeight/8}px`,filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                            <IconDrawDiv 
+                            style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                    }}
+    
+                                    
+    
+                            ></IconDrawDiv> </FeatureIconContainDiv>
+                            <FeatureIconContainDiv style={{right:`${cardHeight/13}px`,bottom:`${cardHeight/8}px`,filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                            <IconDrawDiv 
+                            style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                    ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                    }}
+    
+                                    
+    
+                            ></IconDrawDiv> </FeatureIconContainDiv>
+                            </>
+                        )}
                     </CardDisplay>
 
                     {editablePack && (
@@ -400,36 +498,82 @@ const CardMaker = () => {
                     }}
                     style={{width:"40px",padding:"2px"}} type="number" min="0" max="20"/> stars  </span>
                     </p> 
+                    {(currentEditCard.category != "great land" && currentEditCard.category != "basic replace") && (
+                        <p><label htmlFor="cancast">Can cast manually: </label>
+                        <input type="checkbox" name="cancast"
+                            checked={currentEditCard.canCast}
+                            onChange={(event)=>{
+                                setCardModified(true);
+                                setEditCard({canCast:event.target.checked});
+                            }}
+                        />
+
+                    </p> 
+                    ) }
+                    
                     <p>---</p>
                     
                     {CDAT.CPROP[currentEditCard.category].map((_property,_propIndex)=>{
                         //------------------------------------------------Requirement map start -----------------------------------------
                         return (<p>{_property.name}:  
+                            {(_property.name != "can be used on") && (
                                 <select 
-                                      {...( Array.isArray(currentEditCard[_property.name]) ?{ value:currentEditCard[_property.name][0] }:{ value:currentEditCard[_property.name] })} 
-                                    onChange={(event)=>{ 
-                                        if (  Array.isArray(currentEditCard[_property.name]))
-                                        {
-                                            currentEditCard[_property.name].splice(0,1,event.target.value); 
-                                            setEditCard({[_property.name]:currentEditCard[_property.name]});
-                                        }
-                                        else
-                                        {
-                                            setEditCard({[_property.name]:event.target.value});
-                                        }
-                                        
-                                        setCardModified(true);
-                                    }}
-                                >
+                                {...( Array.isArray(currentEditCard[_property.name]) ?{ value:currentEditCard[_property.name][0] }:{ value:currentEditCard[_property.name] })} 
+                              onChange={(event)=>{ 
+                                  if (  Array.isArray(currentEditCard[_property.name]))
+                                  {
+                                      currentEditCard[_property.name].splice(0,1,event.target.value); 
+                                      setEditCard({[_property.name]:currentEditCard[_property.name]});
+                                  }
+                                  else
+                                  {
+                                      setEditCard({[_property.name]:event.target.value});
+                                  }
+                                  
+                                  setCardModified(true);
+                              }}
+                          >
 
-                                {_property.choices.map((_choice,_choiceIndex)=>{
-                                    return(
-                                        <option >{_choice}</option>
-                                    )
-                                })
-                                } 
+                          {_property.choices.map((_choice,_choiceIndex)=>{
+                              return(
+                                  <option >{_choice}</option>
+                              )
+                          })
+                          } 
 
-                                </select>
+                          </select>
+                          ////Set the can be used, probably need a checkbox?
+                            ) || (
+                                <> 
+                                        {currentEditCard.category === "great land" && (
+                                                <>
+                                                    <input name={`landType${0}`} 
+                                                checked={currentEditCard[_property.name][0]}
+                                                    onChange={(event)=>{
+                                                        const _tempArray = [...currentEditCard["can be used on"]]
+                                                        _tempArray.splice(0,1,event.target.checked);
+                                                         setEditCard({["can be used on"]:_tempArray});
+                                                        }}
+                                                        type="checkbox"/><label htmlFor={`landType${0}`}>Empty space</label>
+                                                </> 
+                                        )}
+                                            
+
+                                    {Object.keys(CDAT.MLANDI).map((_landType,_landTypeIndex)=>{
+                                       
+                                    return (<>  <input name={`landType${_landTypeIndex}`} 
+                                                checked={currentEditCard[_property.name][_landTypeIndex+1]}
+                                                    onChange={(event)=>{
+                                                        const _tempArray = [...currentEditCard["can be used on"]]
+                                                        _tempArray.splice(_landTypeIndex+1,1,event.target.checked);
+                                                setEditCard({["can be used on"]:_tempArray});
+                                        }}
+                                        type="checkbox"/><label htmlFor={`landType${_landTypeIndex}`}>{_landType}</label> </>)
+
+                                    })}
+                                </>
+                            )}
+                                
                                 {(_property.name === "land types" || _property.name === "feature types") && ( 
                                     <select
                                         value={currentEditCard[_property.name][1]}
@@ -463,14 +607,14 @@ const CardMaker = () => {
                              )}  
                     <p>---</p>
                     {currentEditCard.requirements.map(
-                        (_requirement,_index)=>{
- 
+                        (_requirement,_index)=>{ 
                             return(
                                 <>
                                     <p> Card Requirement {_index}:  {_index > 0 && (
                                     <DeleteRequirementButton onClick={(event)=>{deleteRequirement(_index)}}
                                     >Delete</DeleteRequirementButton> 
                                 )}
+                                </p><p> 
                                     <select
                                          value={currentEditCard.requirements[_index].type}
                                          onChange={(event)=>{ 
@@ -489,7 +633,6 @@ const CardMaker = () => {
                                         )
                                         }
                                     </select> 
-                                    </p>
 
                                     { _requirement.type != "none" && (
                                         <> 
@@ -502,6 +645,7 @@ const CardMaker = () => {
                                                                 value={currentEditCard.requirements[_index].values[_rParamIndex]}
                                                                 onChange={(event)=>{
                                                                     setRequirementValue({req:_index,param:_rParamIndex,value:event.target.value});
+                                                                    setCardModified(true);
                                                                 }}
                                                             >
                                                                     
@@ -515,6 +659,7 @@ const CardMaker = () => {
                                                             return(<ReqInput 
                                                                 value={currentEditCard.requirements[_index].values[_rParamIndex]}
                                                                 onChange={(event)=>{
+                                                                    setCardModified(true);
                                                                     setRequirementValue({req:_index,param:_rParamIndex,value:event.target.value});
                                                                 }}
                                                                 type ="number" min="0" max="50"/>)
@@ -525,8 +670,10 @@ const CardMaker = () => {
                                             )}
                                         </>
                                     )}  
+                                    </p>
                                 </>
                             )
+                            
                         }
                     )//requirement map end---------------------------------------------------
                     }
@@ -538,10 +685,10 @@ const CardMaker = () => {
                     <p>---</p>
                     
                     {  //------------------------------------------------Effect map start -----------------------------------------
+                         
                         currentEditCard.effects.map(
-                            (_effect,_effectIndex) =>{
-
-
+                            (_effect,_effectIndex) =>{  
+                                console.log("effects",currentEditCard.effects)
                                 return(
                                     <>
                                     <p>-</p>
@@ -553,13 +700,266 @@ const CardMaker = () => {
                                         >Delete Effect  {_effectIndex}</DeleteRequirementButton>
                                     )} </p>
                                         
-                                        <p>--  Effect {_effectIndex} trigger: </p>
+                                        <p>--  Effect {_effectIndex} trigger: 
+                                            <select 
+                                                value={_effect.trigger.name}
+                                                onChange={
+                                                        (event)=>{    
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"trigger",index:_effectIndex,value:event.target.selectedOptions[0].title});
+                                                        } }>
+                                                 
+                                             {Object.keys(CDAT.CTRIGGER).map((_trigger,_triggerIndex)=>{
+
+                                                return(<option title={_trigger}>{CDAT.CTRIGGER[_trigger].name}</option>);
+                                                
+                                             })}
+                                             </select>
+                                             {CDAT.CTRIGGER[_effect.trigger.key].value === 0 && (
+                                                <TextoInput type="number"
+                                                    style={{width:"50px"}}
+                                                    value={_effect.trigger.value}
+                                                    onChange={
+                                                        (event)=>{   
+                                                            console.log(event.target);
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"triggervalue",index:_effectIndex,value:event.target.value});
+                                                        } } 
+                                                />
+                                             )}
+
+                                            {CDAT.CTRIGGER[_effect.trigger.key].value === "landType" && (
+                                                <select type="number"
+                                                    style={{width:"50px"}}
+                                                    value={_effect.trigger.value}
+                                                    onChange={
+                                                        (event)=>{   
+                                                            console.log(event.target);
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"triggervalue",index:_effectIndex,value:event.target.value});
+                                                        } } 
+                                                >
+                                                    {CDAT.LTYPES.map((_lType,lTypeIndex)=>{
+                                                         return (<option>{_lType}</option>)
+                                                         
+                                                    })}
+                                                    
+                                                </select>
+
+                                             )}
+                                            </p>
                                         {_effect.results.map((_result,_resultIndex)=>{
-                                            //adding results
+                                            //adding results 
+
+
                                             return (
                                                 <>
-                                            <p>- Effect {_effectIndex},{_resultIndex} type:</p>
-                                            <p>- Effect {_effectIndex},{_resultIndex} amount:</p>
+                                            <p>- Effect {_effectIndex},{_resultIndex} type:
+                                                <select
+                                                    value={CDAT.CEFFECT[_effect.results[_resultIndex].type].name}
+                                                    onChange={(event)=>{
+                                                        setCardModified(true);
+                                                        setEditEffect({key:"resulttype",index:_effectIndex,resultIndex:_resultIndex,value:event.target.selectedOptions[0].title});
+                                                    }}
+                                                >
+                                                    
+                                                {Object.keys(CDAT.CEFFECT).map((_effType,_effTypeIndex) =>{
+                                                        
+                                                        return (
+                                                            <option title={CDAT.CEFFECT[_effType].key}>{CDAT.CEFFECT[_effType].name}</option>
+                                                        )
+                                                    })}
+                                                </select>
+                                                {CDAT.CEFFECT[_effect.results[_resultIndex].type].card === "land" && (
+                                                        <>
+                                                        <select
+                                                        value={_result.target}
+                                                        onChange={(event)=>{
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"resulttarget",index:_effectIndex,resultIndex:_resultIndex,value:event.target.value});
+                                                        }} 
+                                                        >
+                                                        {CDAT.CEFFECT[_effect.results[_resultIndex].type].target.map(
+                                                            (_targetType,_targetTypeIndex)=>{
+                                                                return(
+                                                                    <option>{_targetType}</option>
+                                                                )
+
+                                                            }
+                                                        )}
+
+                                                        </select>
+
+
+                                                    <select
+                                                        value={_result.card}
+                                                        onChange={(event)=>{
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"resultcard",index:_effectIndex,resultIndex:_resultIndex,value:event.target.value});
+                                                        }} 
+                                                    
+                                                        > 
+                                                        {(CDAT.MLAND.concat(currentEditPack.packCards)).map(
+                                                            (_land,_landIndex)=>{
+                                                            if (_land.category != "feature")
+                                                            {
+                                                                return(
+                                                                    <option>{_land.name}</option>
+                                                                )
+                                                            } 
+                                                        })}
+
+                                                    </select></>
+                                                )}
+                                                {CDAT.CEFFECT[_effect.results[_resultIndex].type].card === "feature" && (
+                                                    <p>
+                                                    <select
+                                                        value={_result.target}
+                                                        onChange={(event)=>{
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"resulttarget",index:_effectIndex,resultIndex:_resultIndex,value:event.target.value});
+                                                        }} 
+                                                        >
+                                                        {CDAT.CEFFECT[_effect.results[_resultIndex].type].target.map(
+                                                            (_targetType,_targetTypeIndex)=>{
+                                                                return(
+                                                                    <option>{_targetType}</option>
+                                                                )
+
+                                                            }
+                                                        )}
+                                                        
+                                                    </select>
+
+                                                    <select
+                                                    value={_result.card}
+                                                    onChange={(event)=>{
+                                                        setCardModified(true);
+                                                        setEditEffect({key:"resultcard",index:_effectIndex,resultIndex:_resultIndex,value:event.target.value});
+                                                    }} 
+                                                
+                                                    > 
+                                                    {(CDAT.MFEAT.concat(currentEditPack.packCards)).map(
+                                                        (_land,_landIndex)=>{
+                                                        if (_land.category === "feature")
+                                                        {
+                                                            return(
+                                                                <option>{_land.name}</option>
+                                                            )
+                                                        } 
+                                                    })} 
+                                                     </select>
+                                                     </p>
+                                                )}
+                                                    
+                                                </p>
+                                            <p>- Effect {_effectIndex},{_resultIndex} number:  </p><p>
+                                               <TextoInput min="0" max="50" style={{width:"40px"}} type="number" 
+                                                    value={_result.value[0]}
+                                                    onChange={(event)=>{
+                                                        setCardModified(true);
+                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:0,value:event.target.value});
+                                                    }}
+                                                    
+                                                    /> x <select 
+                                                        value={_result.value[1]}
+                                                        onChange={(event)=>{
+                                                            setCardModified(true);
+                                                            setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:1,value:event.target.value});
+                                                        }}
+                                                         >
+                                                        <option>none</option>
+                                                        <option>land type</option>
+                                                        <option>land with no water</option>
+                                                        <option>feature type</option>
+                                                        <option>any water</option>
+                                                        <option>saltwater</option>
+                                                        <option>freshwater</option>
+                                                        <option>temperature</option>
+                                                    </select>
+                                                           {_result.value[1] === "temperature" && (
+                                                                <select
+                                                                    value={_result.value[2]}
+                                                                    onChange={(event)=>{
+                                                                        setCardModified(true);
+                                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:2,value:event.target.value});
+                                                                    }} 
+                                                                
+                                                                    > 
+                                                                    <option>hot</option>
+                                                                    <option>temperate</option>
+                                                                    <option>cold</option>
+
+                                                                </select>
+                                                            )} 
+                                                            {_result.value[1] === "land type" && (
+                                                                <select
+                                                                    value={_result.value[2]}
+                                                                    onChange={(event)=>{
+                                                                        setCardModified(true);
+                                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:2,value:event.target.value});
+                                                                    }} 
+                                                                
+                                                                    >
+                                                                    {CDAT.LTYPES.map((_land,_landIndex)=>{
+
+                                                                        return(
+                                                                            <option>{_land}</option>
+                                                                        )
+                                                                    })}
+
+                                                                </select>
+                                                            )} 
+                                                            {_result.value[1] === "feature type" && (
+                                                                <select
+                                                                     value={_result.value[2]}
+                                                                    onChange={(event)=>{
+                                                                        setCardModified(true);
+                                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:2,value:event.target.value});
+                                                                    }} 
+                                                                     >
+                                                                    {CDAT.FTYPES.map((_feature,_featureIndex)=>{
+
+                                                                        return(
+                                                                            <option>{_feature}</option>
+                                                                        )
+                                                                    })}
+
+                                                                </select>
+                                                            )}
+                                                            {(_result.value[1] === "saltwater" || _result.value[1] === "freshwater" || _result.value[1] === "any water") && (
+                                                                
+                                                                    <TextoInput min="0" max="50" style={{width:"40px"}} type="number" 
+                                                                    value={_result.value[2]}
+                                                                    onChange={(event)=>{
+                                                                        setCardModified(true);
+                                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:2,value:event.target.value});
+                                                                    }} 
+                                                                    />  
+                                                            )}
+
+                                                    <select 
+                                                    value={_result.value[3]}
+                                                    onChange={(event)=>{
+                                                        setCardModified(true);
+                                                        setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:3,value:event.target.value});
+                                                    }}
+                                                    >
+                                                        <option>on self</option>
+                                                        <option>self and adjacent</option>
+                                                        <option>adjacent</option>
+                                                        <option>self and around</option>
+                                                        <option>around</option>
+                                                        <option>anywhere</option>
+                                                    </select> 
+                                                    +<TextoInput min="0" max="50" style={{width:"40px"}} type="number"
+                                                         value={_result.value[4]}
+                                                         onChange={(event)=>{
+                                                             setCardModified(true);
+                                                             setEditEffect({key:"resultvalue",index:_effectIndex,resultIndex:_resultIndex,resultValueIndex:4,value:event.target.value});
+                                                         }}
+                                                        />
+                                                </p>
                                                 </>
                                             )
 
@@ -596,16 +996,20 @@ const CardMaker = () => {
                 </CoolSticky>   
                 </SideGuy> 
                 <AppearanceGrid>
-                <p>Background Color: </p>
-                <p><ColorChangeButton 
-                onClick={()=>{
-                    setCardModified(true);
-                     setColorKey("backColor") }}
-                style={{backgroundColor:`${currentEditCard.backColor}`}}>COLOR</ColorChangeButton></p>
+                    {currentEditCard.category != "feature" && (
+                        <><p>Background Color: </p>
+                        <p><ColorChangeButton 
+                        onClick={()=>{
+                            setCardModified(true);
+                             setColorKey("backColor") }}
+                        style={{backgroundColor:`${currentEditCard.backColor}`}}>COLOR</ColorChangeButton></p></>
+
+                    )}
+                
  
 
                     
-                    {currentEditCard.cardId && (
+                    {(currentEditCard.cardId && currentEditCard.category != "feature") && (
                         <>
                         {currentEditCard.patterns.map(
                             (_pattern,_patternIndex) => {
@@ -699,7 +1103,7 @@ const CardMaker = () => {
                                                                 setShapeStat({pattern:_patternIndex,shape:_shapeIndex,key:"type",value:event.target.value}) 
                                                             }
                                                             }>
-                                                                {Object.keys(shapeData).map(
+                                                                {Object.keys(CDAT.SHAPEDAT).map(
                                                                     (shapeType,_typeIndex)=>{
                                                                         return(
                                                                             <option className={shapeType}>{shapeType}</option>
@@ -730,7 +1134,7 @@ const CardMaker = () => {
                                                            ////sizes map return
                                                             return (
                                                                 <>
-                                                                    <p style={{paddingLeft:"9%"}}>--P{_patternIndex}Shape{_shapeIndex} {`${shapeData[currentEditCard.patterns[_patternIndex].shapes[_shapeIndex].type].sizeNames[_sizeIndex]}`}</p> 
+                                                                    <p style={{paddingLeft:"9%"}}>--P{_patternIndex}Shape{_shapeIndex} {`${CDAT.SHAPEDAT[currentEditCard.patterns[_patternIndex].shapes[_shapeIndex].type].sizeNames[_sizeIndex]}`}</p> 
                                                                     <p> 
                                                                     <TextoInput type="number" step="0.01" value={Number(currentEditCard.patterns[_patternIndex].shapes[_shapeIndex].size[_sizeIndex]).toFixed(3)}
                                                                          onChange={(event)=>{ setCardModified(true); setShapeSize({pattern:_patternIndex,shape:_shapeIndex,size:_sizeIndex,value:event.target.value})}}/>
@@ -778,23 +1182,154 @@ const CardMaker = () => {
  
 
                 </AppearanceGrid> 
+                
+
+                <ColorAndIconDiv>
+                {(currentEditCard.cardId && (currentEditCard.category === "feature" || currentEditCard.category === "great land")) && (
+                ///choose icon section
+                
+                <><ChooseIconDiv> 
+                    <IconContainer> 
+                        <IconDrawDiv style={{filter:`drop-shadow(1px 1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(1px -1px 0 ${currentEditCard.iconOutline}) drop-shadow(-1px 1px 0 ${currentEditCard.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                        <IconDrawDiv 
+                        style={{ mask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                ,WebkitMask:`url(${CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src}) no-repeat center/contain`
+                                ,background:`linear-gradient(${currentEditCard.mainIconGradientDirection}deg, ${currentEditCard.mainIconColor} 0%, ${currentEditCard.mainIconGradient} 100%)` 
+                                }}
+
+                                
+
+                        ></IconDrawDiv> </IconDrawDiv>
+                            
+                    </IconContainer>
+
+                    <p>Main Icon: 
+                        <select
+                            value={currentEditCard.mainIconCat}
+                            onChange={(event)=>{   
+                                console.log(CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].src);
+                                setEditCard({mainIconCat:event.target.value});
+                            }}
+                            >
+                            {Object.keys(CDAT.iconSources).map((_iconCat,_iconCatIndex)=>{
+                                 return(
+                                    <option>{_iconCat}</option>
+                                 )
+                                 
+                            })}
+                        </select>
+
+                        <select
+                            value={CDAT.iconSources[currentEditCard.mainIconCat][currentEditCard.mainIcon].name}
+                            onChange={(event)=>{    
+                                setEditCard({mainIcon:event.target.selectedOptions[0].title});
+                            }}
+                        >
+                        {CDAT.iconSources[currentEditCard.mainIconCat].map((_icon,_iconIndex)=>{
+                            
+                            return (<option title={_iconIndex}>{_icon.name}</option>)
+                            
+                        })}</select>
+
+                        </p>
+                        <p><ColorChangeButton 
+                            onClick={()=>{
+                            setCardModified(true);
+                            setColorKey("mainIconColor");
+                            }}
+                            style={{backgroundColor:`${currentEditCard.mainIconColor}`}}>COLOR</ColorChangeButton> 
+                         <ColorChangeButton 
+                            onClick={()=>{
+                            setCardModified(true);
+                            setColorKey("mainIconGradient");
+                            }}
+                            style={{backgroundColor:`${currentEditCard.mainIconGradient}`}}>GRADIENT</ColorChangeButton>
+                            <ColorChangeButton 
+                            onClick={()=>{
+                            setCardModified(true);
+                            setColorKey("iconOutline");
+                            }}
+                            style={{backgroundColor:`${currentEditCard.iconOutline}`}}>OUTLINE</ColorChangeButton>
+                            
+                            </p>
+                            <p>Gradient Angle <input 
+                                value={currentEditCard.mainIconGradientDirection}
+                                onChange={(event)=>{
+                                       setEditCard({mainIconGradientDirection:event.target.value})
+                                    } 
+                                }
+                                type="range"
+                                min="0" max="360"
+                            /></p>
+
+                            
+                   {/*
+                    <p>Secondary Icon: 
+                        <select
+                                value={currentEditCard.subIconCat}
+                                onChange={(event)=>{   
+                                    setEditCard({subIconCat:event.target.value});
+                                }}
+                            >
+                            <option>none</option>
+                            {Object.keys(CDAT.iconSources).map((_iconCat,_iconCatIndex)=>{
+                                 return(
+                                    <option>{_iconCat}</option>
+                                 )
+                                 
+                            })}
+                        </select>
+                        {currentEditCard.subIconCat != "none" && (
+                            <select>
+                            
+                            {CDAT.iconSources[currentEditCard.mainIconCat].map((_icon,_iconIndex)=>{
+                            
+                                return (<>CAT</>)
+                                
+                            })}</select>
+                        )}
+                        
+                            
+                    </p>
+                    <p><ColorChangeButton 
+                            onClick={()=>{
+                            setCardModified(true);
+                            //setColorKey("iconMain") 
+                            }}
+                            style={{backgroundColor:`${currentEditCard.backColor}`}}>COLOR</ColorChangeButton></p>
+
+                                 <p>
+                                icons pattern:
+                                </p>
+                                <p>icons slider 1:
+                                </p>
+                                <p>icons slider 2:
+                                </p> 
+                                */}
+                    </ChooseIconDiv></>
+                
+                
+                ///END OF ICON CHOICE ---------------------------=
+                )}
+
+
                 <SketchStyle> 
                     {colorKey != null
                      && (
                         <>
-                            {colorKey === "backColor" && ( 
+                            {typeof colorKey === "string" && ( 
                                 <ColorPickSticky> <SketchPicker  width={`${cardWidth*3}px`} color={currentEditCard[colorKey]} 
                                     onChange={(event)=>{ 
-                                    setEditCard({backColor:event.hex})
+                                    setEditCard({[colorKey]:event.hex})
                                     setCardModified(true);
                                      }}
                                 />
                                 <ColorChangeButton onClick={()=>{
                                     setColorKey(null);
                                 }}>done</ColorChangeButton></ColorPickSticky>
-                            )}
+                            )} 
 
-                            {colorKey != "backColor" && (
+                            {(typeof colorKey === "number") && (
                                 <ColorPickSticky> <SketchPicker  width={`${cardWidth*3}px`} color={currentEditCard.patterns[colorKey].color} 
                                      onChange={(event)=>{ 
                                     setPatternStat({pattern:colorKey,key:"color",value:event.hex});
@@ -809,6 +1344,7 @@ const CardMaker = () => {
                      )
                     }
                 </SketchStyle>
+                </ColorAndIconDiv>
             </CardDetails> 
         </CardMakeDiv>
     )
@@ -816,6 +1352,65 @@ const CardMaker = () => {
 }
 
 ////bkmarkstyled
+
+const FeatureIconContainDiv = styled.div`
+position: absolute; 
+width: 50%;
+height:50%;
+z-index: 20;
+text-align: center;
+
+`
+
+const IconDrawContainDiv = styled.div`
+position: absolute; 
+width: 100%;
+height:100%;
+z-index: 20;
+text-align: center;
+`
+const IconDrawDiv = styled.div` 
+margin-left:4%;
+margin-top:3%;
+width: 92%;
+height:92%;
+z-index: 20;
+`
+const IconImage = styled.img`
+width:100%;
+height:100%;
+
+
+-webkit-user-drag: none;
+user-select: none;
+-moz-user-select: none;
+-webkit-user-select: none;
+-ms-user-select: none; 
+pointer-events: none;
+`
+
+const ColorAndIconDiv = styled.div`
+flex:3;
+`
+
+const IconContainer = styled.div`
+padding:10px;
+margin:6px;
+background-color: gray;
+border:2px solid white;
+border-radius: 100px;
+width:300px;
+height:200px;
+
+`
+
+const ChooseIconDiv = styled.div`
+
+
+
+`
+
+
 const EditingAnim = keyframes`   
 50%{   
     background-color: rgba(150,70,22,0.6);
@@ -1018,7 +1613,7 @@ const CoolSticky = styled.div`
 background-color: #222222;
 padding: 7px;
 position: absolute;
-line-height: 30px;    
+line-height: 30px;     
 min-height: calc(100% - 120px);
 border: 2px black solid; 
 `

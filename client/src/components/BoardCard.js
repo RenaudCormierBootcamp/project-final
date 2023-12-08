@@ -5,11 +5,12 @@ import col from "./utility/colors";
 import { GiOlive } from "react-icons/gi";
 import { PiTreeDuotone } from "react-icons/pi";
 import { GiCactus } from "react-icons/gi"; 
+ 
 
 const BoardCard = ({cardObj,posX,posY}) => { 
     const {
         actions: { setCard, contextMouseOver,contextMouseStop },
-        state: { boardGrid, mouseOver },
+        state: { CDAT, cardWidth, cardHeight, boardGrid, mouseOver },
     } = useContext(AppContext);
 
     const [bigPattern,setBigPattern] = useState([]);
@@ -113,14 +114,58 @@ const BoardCard = ({cardObj,posX,posY}) => {
 
     return (
         <>
-            { cardObj.cardId != null &&
+        {(cardObj.cardId != null && cardObj.category === "feature") && (
+                                    <IconDrawContainDiv style={{filter:`drop-shadow(1px 1px 0 ${cardObj.iconOutline}) drop-shadow(-1px -1px 0 ${cardObj.iconOutline}) drop-shadow(1px -1px 0 ${cardObj.iconOutline}) drop-shadow(-1px 1px 0 ${cardObj.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                                    <IconDrawDiv 
+                                    style={{ mask:`url(${CDAT.iconSources[cardObj.mainIconCat][cardObj.mainIcon].src}) no-repeat center/contain`
+                                            ,WebkitMask:`url(${CDAT.iconSources[cardObj.mainIconCat][cardObj.mainIcon].src}) no-repeat center/contain`
+                                            ,background:`linear-gradient(${cardObj.mainIconGradientDirection}deg, ${cardObj.mainIconColor} 0%, ${cardObj.mainIconGradient} 100%)` 
+                                            }}
+            
+                                            
+            
+                                    ></IconDrawDiv> </IconDrawContainDiv> 
+
+                                )}
+            { (cardObj.cardId != null && cardObj.category != "feature") &&
             ( 
              <CardContain id="contain" style={{backgroundColor:`${cardObj.backColor}`}}>     
                  {bigPattern} 
-             </CardContain>
+
+                 {cardObj.category === "great land" && (
+ 
+                        <IconDrawContainDiv style={{filter:`drop-shadow(1px 1px 0 ${cardObj.iconOutline}) drop-shadow(-1px -1px 0 ${cardObj.iconOutline}) drop-shadow(1px -1px 0 ${cardObj.iconOutline}) drop-shadow(-1px 1px 0 ${cardObj.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                        <IconDrawDiv 
+                        style={{ mask:`url(${CDAT.iconSources[cardObj.mainIconCat][cardObj.mainIcon].src}) no-repeat center/contain`
+                                ,WebkitMask:`url(${CDAT.iconSources[cardObj.mainIconCat][cardObj.mainIcon].src}) no-repeat center/contain`
+                                ,background:`linear-gradient(${cardObj.mainIconGradientDirection}deg, ${cardObj.mainIconColor} 0%, ${cardObj.mainIconGradient} 100%)` 
+                                }}
+
+                                
+
+                        ></IconDrawDiv> </IconDrawContainDiv> 
+                 )}
+
+                 {cardObj.feature1 != null && (
+                    <FeatureIconContainDiv style={{left:`${0}px`,top:`${cardHeight/8}px`,filter:`drop-shadow(1px 1px 0 ${cardObj.feature1.iconOutline}) drop-shadow(-1px -1px 0 ${cardObj.feature1.iconOutline}) drop-shadow(1px -1px 0 ${cardObj.feature1.iconOutline}) drop-shadow(-1px 1px 0 ${cardObj.feature1.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                    <IconDrawDiv 
+                    style={{ mask:`url(${CDAT.iconSources[cardObj.feature1.mainIconCat][cardObj.feature1.mainIcon].src}) no-repeat center/contain`
+                            ,WebkitMask:`url(${CDAT.iconSources[cardObj.feature1.mainIconCat][cardObj.feature1.mainIcon].src}) no-repeat center/contain`
+                            ,background:`linear-gradient(${cardObj.feature1.mainIconGradientDirection}deg, ${cardObj.feature1.mainIconColor} 0%, ${cardObj.feature1.mainIconGradient} 100%)` 
+                            }}  
+                    ></IconDrawDiv> </FeatureIconContainDiv>
+                 )}
+                {cardObj.feature2 != null && (
+                    <FeatureIconContainDiv style={{right:`${0}px`,bottom:`${cardHeight/8}px`,filter:`drop-shadow(1px 1px 0 ${cardObj.feature2.iconOutline}) drop-shadow(-1px -1px 0 ${cardObj.feature2.iconOutline}) drop-shadow(1px -1px 0 ${cardObj.feature2.iconOutline}) drop-shadow(-1px 1px 0 ${cardObj.feature2.iconOutline})  drop-shadow(1px 1px 0 black) drop-shadow(-1px 1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px -1px 0 black)`}}>
+                    <IconDrawDiv 
+                    style={{ mask:`url(${CDAT.iconSources[cardObj.feature2.mainIconCat][cardObj.feature2.mainIcon].src}) no-repeat center/contain`
+                            ,WebkitMask:`url(${CDAT.iconSources[cardObj.feature2.mainIconCat][cardObj.feature2.mainIcon].src}) no-repeat center/contain`
+                            ,background:`linear-gradient(${cardObj.feature2.mainIconGradientDirection}deg, ${cardObj.feature2.mainIconColor} 0%, ${cardObj.feature2.mainIconGradient} 100%)` 
+                            }} 
+                    ></IconDrawDiv> </FeatureIconContainDiv> )}
+            </CardContain>
             )
-            }
-        
+            } 
       </>
     )
 
@@ -138,5 +183,58 @@ const CardSecondPattern = styled.div`
  width:100%;
  height:100%; 
 `
+const FeatureIconContainDiv = styled.div`
+position: absolute; 
+width: 50%;
+height:50%;
+z-index: 20;
+text-align: center;
+
+`
+
+const IconDrawContainDiv = styled.div`
+position: absolute; 
+width: 100%;
+height:100%;
+z-index: 20;
+text-align: center;
+`
+const IconDrawDiv = styled.div` 
+margin-left:4%;
+margin-top:3%;
+width: 92%;
+height:92%;
+z-index: 20;
+`
+const IconImage = styled.img`
+width:100%;
+height:100%;
+
+
+-webkit-user-drag: none;
+user-select: none;
+-moz-user-select: none;
+-webkit-user-select: none;
+-ms-user-select: none; 
+pointer-events: none;
+`
+
+const ColorAndIconDiv = styled.div`
+flex:3;
+`
+
+const IconContainer = styled.div`
+padding:10px;
+margin:6px;
+background-color: gray;
+border:2px solid white;
+border-radius: 100px;
+width:300px;
+height:200px;
+
+`
+
+
+
 
 export default BoardCard
