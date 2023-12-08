@@ -2,7 +2,7 @@ import { createContext,useReducer } from "react";
 import { Navigate } from "react-router-dom";
 
 import {CDATA} from "./utility/testdata.js";
-import {CFUNC} from "./game/cardfunctions.js";
+import {CFUNC} from "./game/cardfunctions.js"; 
  
 
 const boardSize = 8;
@@ -59,7 +59,7 @@ const initialState = {
     CDAT:{...CDATA,CFUNC:CFUNC},
     currentTurn: 1,
     turnMessages: [],
-    maxTurns: 20,
+    maxTurns: 6,
     templateNewCard:templateNewCard,
     playerResources: [[10,0,0],[10,0,0]],
     resourcesPlus: [[0,0,0],[0,0,0]],
@@ -128,9 +128,10 @@ const reducer = (state, action) => {
     case 'set-card': {  
       const _tempGrid = state.boardGrid.slice();
       const _targetCard = _tempGrid[action.data.posX][action.data.posY];
+      const _card = {...action.data.card};
       if (action.data.card.category === "feature")
       {
-        const _card = {...action.data.card};
+        
         if (_targetCard.feature1 === null)
         {
           _targetCard.feature1 = _card;
@@ -143,21 +144,50 @@ const reducer = (state, action) => {
       else
       { 
         
-        action.data.card.posX = action.data.posX;
-        action.data.card.posY = action.data.posY;
-        if (_targetCard.cardId === null)
+        _card.posX = action.data.posX;
+        _card.posY = action.data.posY;
+        if (_targetCard.cardId === null || _card.category === "great land")
         {
-          action.data.card.feature1 = null;
-          action.data.card.feature2 = null;
+          _card.feature1 = null;
+          _card.feature2 = null;
         }
         else
         {
-          action.data.card.feature1 = _targetCard.feature1;
-          action.data.card.feature2 = _targetCard.feature2;
+          _card.feature1 = _targetCard.feature1;
+          _card.feature2 = _targetCard.feature2;
         }
-        _tempGrid[action.data.posX][action.data.posY] = {...action.data.card};
+        _tempGrid[action.data.posX][action.data.posY] = {..._card};
+      } 
+ 
+      let _stateUpdate = {...state};
+      for (let _f= 0; _f < _card.effects.length; _f++)
+      { 
+        const _effect = _card.effects[_f] ;
+        if (_effect.trigger.name === state.CDAT.CTRIGGER.onPlay.name)
+        { 
+          _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+        }
+        else if(_effect.trigger.name  === state.CDAT.CTRIGGER.afterTimer.name)
+        {
+          _effect.trigger.timer = _effect.trigger.value;
+        }
       }
-      
+      let _resource = [[...state.resourcesPlus[0]], [...state.resourcesPlus[1]]]; 
+      console.log("!dumb resources",_resource)
+      const _resPlus = _stateUpdate.resourcesPlus;
+      if (_resPlus != undefined)
+      { 
+        _resource[0][0] += _resPlus[0][0];
+        _resource[1][1] += _resPlus[1][1];
+        _resource[0][2] += _resPlus[0][2];
+        _resource[1][0] += _resPlus[1][0];
+        _resource[0][1] += _resPlus[0][1];
+        _resource[1][2] += _resPlus[1][2]; 
+      }
+
+      state.playerResources[_card.player-1][0] -= _card.cost[0];
+      state.playerResources[_card.player-1][1] -= _card.cost[1];
+      state.playerResources[_card.player-1][2] -= _card.cost[2];
 
       return {
         ...state,    
@@ -205,7 +235,6 @@ const reducer = (state, action) => {
     }
 
     case 'change-game-phase': {    
-
 
       return {
         ...state,     
@@ -1143,6 +1172,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const setCard = (data) =>{ //this one sets a specific card on the map
+       
 
       dispatch({
         type: "set-card",
@@ -1197,8 +1227,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const updatePoints = (data) => {
-
-
+ 
       dispatch({
         type: "update-points",
         data:data,
@@ -1212,6 +1241,7 @@ export const AppProvider = ({ children }) => {
         data:data,
       })
     }
+ 
 
     const endTurnTrigger = (data) => {
       let _stateUpdate = {...state};
@@ -1228,6 +1258,14 @@ export const AppProvider = ({ children }) => {
               { 
                 _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
               }
+              else if(_effect.trigger.name === state.CDAT.CTRIGGER.afterTimer.name)
+              {
+                _effect.trigger.timer -= 1;
+                if (_effect.trigger.timer === 0)
+                {
+                  _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                }
+              }
             }
               if (_card.feature1 != null)
               {
@@ -1237,6 +1275,14 @@ export const AppProvider = ({ children }) => {
                   if (_effect.trigger.name === state.CDAT.CTRIGGER.everyTurn.name)
                   { 
                     _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                  }
+                  else if(_effect.trigger.name === state.CDAT.CTRIGGER.afterTimer.name)
+                  {
+                    _effect.trigger.timer -= 1;
+                    if (_effect.trigger.timer === 0)
+                    {
+                      _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                    }
                   }
                 }
               }
@@ -1248,6 +1294,14 @@ export const AppProvider = ({ children }) => {
                   if (_effect.trigger.name === state.CDAT.CTRIGGER.everyTurn.name)
                   {  
                     _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                  }
+                  else if(_effect.trigger.name === state.CDAT.CTRIGGER.afterTimer.name)
+                  {
+                    _effect.trigger.timer -= 1;
+                    if (_effect.trigger.timer === 0)
+                    {
+                      _stateUpdate=CFUNC.effectTriggered(state,_card,_effect);
+                    }
                   }
                 }
               }
@@ -1591,12 +1645,38 @@ export const AppProvider = ({ children }) => {
       })
     }
 
+    const aiOpponentRandomCard = (data) =>{
+      let _cardChoice = state.CDAT.MLAND[Math.floor(Math.random()*6)];
+      if (state.playerPacks[1][0].basicReplaceLand.replacing === _cardChoice.name.toLowerCase())
+      {
+        _cardChoice = state.playerPacks[1][0].basicReplaceLand;
+      }
+      else if (state.playerPacks[1][1].basicReplaceLand.replacing === _cardChoice.name.toLowerCase())
+      {
+        _cardChoice = state.playerPacks[1][1].basicReplaceLand;
+      } 
+      
+      
+
+      
+      
+      return _cardChoice
+    }
+
     const opponentTurn = (data) => {
+        if (state.turnMessages.length > 12)
+        {
+          state.turnMessages = state.turnMessages.slice(0,12);
+        }
+        console.log("alert",state)
         const _possibleTargets = state.CDAT.CFUNC.checkAdjacentSpaces(state);
         let _rando = Math.floor(Math.random()*_possibleTargets.length); 
         const _targetSpace = _possibleTargets[_rando];
+        const _card = aiOpponentRandomCard();
+
+
         setCard({posX:_targetSpace.posX,posY:_targetSpace.posY,card:{
-                        ...state.CDAT.MLAND[state.CDAT.MLANDI.desert],
+                        ..._card,
                         player:2,
                         cardId:1, 
         }})

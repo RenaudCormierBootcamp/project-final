@@ -20,21 +20,21 @@ const effectMath = (state,cardObj,result) =>
                             _arr.push(cardObj);
                     case "adjacent":
                             if (cardObj.posX > 0) {_arr.push(state.boardGrid[cardObj.posX-1][cardObj.posY]);}
-                            if (cardObj.posX < state.boardSize-1) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY]);}
+                            if (cardObj.posX < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY]);}
                             if (cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY-1]);}
-                            if (cardObj.posY < state.boardSize-1) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY+1]);}
+                            if (cardObj.posY < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY+1]);}
                     break;
                     case "self and around":
                         _arr.push(cardObj);
                     case "around":
                             if (cardObj.posX > 0) {_arr.push(state.boardGrid[cardObj.posX-1][cardObj.posY]);}
-                            if (cardObj.posX < state.boardSize-1) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY]);}
+                            if (cardObj.posX < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY]);}
                             if (cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY+-1]);}
-                            if (cardObj.posY < state.boardSize-1) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY+1]);}
+                            if (cardObj.posY < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX][cardObj.posY+1]);}
                             if (cardObj.posX > 0 && cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX-1][cardObj.posY-1]);}
-                            if (cardObj.posX < state.boardSize-1 && cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY-1]);}
-                            if (cardObj.posX > 0 && cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY+1]);}
-                            if (cardObj.posX < state.boardSize-1 && cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX-1][cardObj.posY+1]);}
+                            if (cardObj.posX < state.boardSize-2 && cardObj.posY > 0) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY-1]);}
+                            if (cardObj.posX  < state.boardSize-2 && cardObj.posY  < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX+1][cardObj.posY+1]);}
+                            if (cardObj.posX > 0 && cardObj.posY < state.boardSize-2) {_arr.push(state.boardGrid[cardObj.posX-1][cardObj.posY+1]);}
                     break;
                     case "anywhere":
                         for (let _i =0; _i < state.boardSize; _i++)
@@ -102,17 +102,17 @@ const effectTriggered = (state,cardObj,effect) =>
             case "addSun":   
                 _numbero = Number(_result.value[0]) * effectMath(state,cardObj,_result) + Number(_result.value[4]);
                 state.resourcesPlus[cardObj.player-1][0] +=  _numbero;
-                state.turnMessages.unshift(cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" sun!");
+                state.turnMessages.unshift({player:cardObj.player,message:cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" sun!"});
             break;
             case "addMoon":  
                 _numbero = Number(_result.value[0]) * effectMath(state,cardObj,_result) + Number(_result.value[4]);
                 state.resourcesPlus[cardObj.player-1][1] += _numbero;
-                state.turnMessages.unshift(cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" moon!");
+                state.turnMessages.unshift({player:cardObj.player,message:cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" moon!"});
             break;
             case "addStars":  
               _numbero = Number(_result.value[0]) * effectMath(state,cardObj,_result) + Number(_result.value[4]);
               state.resourcesPlus[cardObj.player-1][2] +=  _numbero;
-              state.turnMessages.unshift(cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" stars!");
+              state.turnMessages.unshift({player:cardObj.player,message:cardObj.name + " "+String(cardObj.posX)+","+String(cardObj.posY)+" creates "+String(_numbero)+" stars!"});
             break;
             
 
@@ -266,6 +266,7 @@ const checkAdjacentSpaces =(state,type="any",num=1,empty=true) => {
           let _adj = 0;
           const _cX = _card.posX;
           const _cY = _card.posY; 
+          console.log("bitches",_cX,_cY)
           if (_i > 0){ 
             if (state.boardGrid[_cX-1][_cY].cardId != null){
               _adj+= 1;

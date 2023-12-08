@@ -125,9 +125,22 @@ const GameBoard = () => {
                     
                  <Separator/>
                     {gamePhase === 5 && (
-                        <>
-                        <TurnEnder>GAME OVER</TurnEnder> 
-                        </>
+                        <TurnEnder>
+                        <p>GAME OVER</p> 
+                        {playerResources[0][2] > playerResources[1][2] && (
+                            <>
+                        <p>You win!</p><p> <span style={{filter:"drop-shadow(1px 0px 10px rgba(255,0,255,0.6)) drop-shadow(0px 0px 8px #ffffff)"}}>
+                        <BsStars color={"aqua"}/>Stars:</span> {playerResources[0][2]} to {playerResources[1][2]}</p>  </>
+                        )}
+                        {playerResources[0][2] < playerResources[1][2] && (
+                        <><p>You lose...</p> <p><span style={{filter:"drop-shadow(1px 0px 10px rgba(255,0,255,0.6)) drop-shadow(0px 0px 8px #ffffff)"}}>
+                        <BsStars color={"aqua"}/>Stars</span>: {playerResources[0][2]} to {playerResources[1][2]}</p> </>
+                        )}
+                        {playerResources[0][2] === playerResources[1][2] && (
+                        <><p>Wow a draw!!</p> <p><span style={{filter:"drop-shadow(1px 0px 10px rgba(255,0,255,0.6)) drop-shadow(0px 0px 8px #ffffff)"}}>
+                        <BsStars color={"aqua"}/>Stars</span>: {playerResources[0][2]} to {playerResources[1][2]}</p></>
+                        )}
+                        </TurnEnder>
                     )}
                     {gamePhase === 1 && (
                         <>
@@ -160,7 +173,7 @@ const GameBoard = () => {
                                                     ()=>{HandlePlacement(indexX,_y)}
                                                 }
                                                 >
-                                                    <span style={{filter:"drop-shadow(1px 0 4px #000000)"}}>!! <GiMoon/> Moon:  <span style={{color:"yellow"}}>{playerResources[0][1]}</span></span>
+                                                   {/*<span style={{filter:"drop-shadow(1px 0 4px #000000)"}}>!! <GiMoon/> Moon:  <span style={{color:"yellow"}}>{playerResources[0][1]}</span></span>*/}
                                                 </PlacementIndicator>  
                                                 ) }
 
@@ -269,13 +282,15 @@ const GameBoard = () => {
                             </PlayerHand>
 
                             <GameMessageDiv 
-                            {...( gamePhase === 1 ?{className:"activated"}:{})} >
+                            {...( (gamePhase === 1) ?{className:"activated"}:{className:""})} >
+                                <> 
                                 {turnMessages.map((_message,_messageIndex)=>{
 
                                     return(
-                                        <p>{_message}</p>
+                                        <p style={{textShadow:`2px 2px 2px ${playerColor[_message.player-1]}, -2px -2px 3px ${playerColor[_message.player-1]}`}}>P{_message.player}{_message.message}</p>
                                     )
                                 })}
+                                </>
                             </GameMessageDiv>
                              
                                 {handMouseOver != null && (
@@ -291,15 +306,15 @@ const GameMessageDiv = styled.div`
 position: absolute;
 font-size: 34px;
 top:55px;
+    opacity: 0;
 background-color: rgba(0,0,0,0.7);
 color:white;
-transition: opacity 1000ms ease-in;
+transition: opacity 3000ms ease-in;
 padding:50px;
 z-index: 200;
-.activated {
-    background-color: blue;
-    transition: opacity none;
-    opacity: 1;
+&.activated {
+    transition: opacity 0ms ease-in;
+    opacity: 1; 
 }
 
 `
@@ -359,14 +374,15 @@ animation: ${PlacementAnim} 5s infinite;
 `
 
 const TurnEnder = styled.div`
-    background-color: rgba(20,20,60,0.1);
+    background-color: rgba(20,20,60,0.5);
     border-radius: 50px;
     font-family: warlocks-ale;
-    margin-top:4%;
+    margin-top:10%;
     position: absolute;
     text-align: center;
     width:100%;
     font-size: 150px;
+    line-height: 150px;
     color:white;
     z-index: 100;
 `

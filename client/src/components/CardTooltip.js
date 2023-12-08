@@ -11,7 +11,8 @@ const CardTooltip = () => {
     const {
         actions: { contextDimensions, setMousePos },
         state: { playerResources, boardGrid, targetGrid, windowWidth,windowHeight, 
-            cardWidth, cardHeight, mouseOver, mousingOver, mouseX, boardWidth, boardSize
+            cardWidth, cardHeight, mouseOver, mousingOver, mouseX, boardWidth, boardSize,
+            playerColor,
             
         },
     } = useContext(AppContext);
@@ -36,7 +37,7 @@ const CardTooltip = () => {
                     {boardGrid[mouseOver[0]][mouseOver[1]] != null && (  
                     <PaddedDiv>
                         <DescDiv>
-                            <span style={{filter:"drop-shadow(1px 0 5px #000000) drop-shadow(-1px -1px 2px #000000)"}}>
+                            <span style={{float:"left",textShadow:`2px 2px 2px ${playerColor[_cardObj.player-1]}, -2px -2px 3px ${playerColor[_cardObj.player-1]}`,filter:`drop-shadow(6px 6px 9px ${playerColor[_cardObj.player-1]})`}}>{`P${_cardObj.player}`}</span> <span style={{filter:"drop-shadow(1px 0 5px #000000) drop-shadow(-1px -1px 2px #000000)"}}>
                                 {boardGrid[mouseOver[0]][mouseOver[1]].name}</span>
                         </DescDiv>
                         <CardContain style={{backgroundColor:"red",width:`${cardWidth*2}px`,height:`${cardHeight*2}px`,filter:"drop-shadow(1px 0 3px #ffffff) drop-shadow(-1px -1px 8px #000000)"}}>

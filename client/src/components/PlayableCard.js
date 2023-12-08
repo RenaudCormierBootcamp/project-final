@@ -16,7 +16,7 @@ const PlayableCard = ({cardObj,gridSpan=1}) =>{
     const [playable,setPlayable] = useState(true);
 
     useEffect(()=>{
-        if (playerResources[localPlayer-1][0] >= cardObj.cost[0] && playerResources[localPlayer-1][2] >= cardObj.cost[2] && playerResources[localPlayer-1][2] >= cardObj.cost[2])
+        if (playerResources[localPlayer-1][0] >= cardObj.cost[0] && playerResources[localPlayer-1][1] >= cardObj.cost[1] && playerResources[localPlayer-1][2] >= cardObj.cost[2])
         {
             setPlayable(true);
         }
@@ -45,7 +45,10 @@ const PlayableCard = ({cardObj,gridSpan=1}) =>{
                 maxHeight:`${_heighto*gridSpan+24*gridSpan*gridSpan}px`,
             }}  
             onClick={()=>{ 
-                chooseCard({card:cardObj}); 
+                if (playable)
+                {
+                    chooseCard({card:cardObj});  
+                }
             }}
             onMouseOver={(event)=>{
                 setHandMouseOver(cardObj)
