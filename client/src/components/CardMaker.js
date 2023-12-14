@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 
 import { AppContext } from "./AppContext.js";
 import BoardCard from "./BoardCard.js"; 
+import EditTooltip from "./EditTooltip.js";
 
 
  
@@ -24,9 +25,11 @@ const CardMaker = () => {
             newEditCard, setEditCard, setPatternStat, setShapeStat,setShapeSize,setEditEffect,
             addPattern,deletePattern,addShape,deleteShape,
             setRequirementType,setRequirementValue, addRequirement,deleteRequirement,resetRequirements,
-            addEffect,deleteEffect,addResult,removeResult
+            addEffect,deleteEffect,addResult,removeResult,
+            setHandMouseOver,
         },
         state: { customPacks, currentEditCardIndex,currentEditPackIndex,
+            handMouseOver,
             currentEditPack, currentEditCard,
             cardWidth, cardHeight, windowHeight,boardWidth,boardHeight,
             copyCard,
@@ -342,7 +345,14 @@ const CardMaker = () => {
                 
             <SideGuy className="baboon" style={{minWidth:`${boardWidth/2.3}px`}}  >
                 <CoolSticky  style={{maxWidth:`${boardWidth/2.3}px`}} >
-                    <CardDisplay style={{width:`${cardWidth*2}px`,height:`${cardHeight*2}px`}}>
+                    <CardDisplay
+                    onMouseOver={(event)=>{ 
+                        setHandMouseOver(currentEditCard);
+                    }} 
+                    onMouseOut={(event)=>{ 
+                        setHandMouseOver(null);
+                    }} 
+                    style={{width:`${cardWidth*2}px`,height:`${cardHeight*2}px`}}>
                     {currentEditCard.category === "feature" && (
                                         <>
                                             <FeatureIconContainDiv style={{left:`${cardHeight/13}px`,top:`${cardHeight/8}px`,
@@ -407,6 +417,10 @@ const CardMaker = () => {
                             </>
                         )}
                     </CardDisplay>
+                    {handMouseOver != null && (
+                        <EditTooltip/>
+
+                    )}
 
                     {editablePack && (
                         <>

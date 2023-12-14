@@ -59,7 +59,7 @@ const initialState = {
     CDAT:{...CDATA,CFUNC:CFUNC},
     currentTurn: 1,
     turnMessages: [],
-    maxTurns: 6,
+    maxTurns: 20,
     templateNewCard:templateNewCard,
     playerResources: [[10,0,0],[10,0,0]],
     resourcesPlus: [[0,0,0],[0,0,0]],
@@ -599,7 +599,18 @@ const reducer = (state, action) => {
           _shapey.push({..._saveCard.patterns[_i].shapes[_j],size:[..._saveCard.patterns[_i].shapes[_j].size]});
         }
         _tempCard.patterns.push({..._saveCard.patterns[_i],shapes:_shapey});
-      }
+      } 
+
+      let _desc = "testing";
+
+      _tempCard.desc = _desc;
+
+
+
+
+
+
+
 
       const _packCopy = {...state.currentEditPack}
 
@@ -1655,7 +1666,7 @@ export const AppProvider = ({ children }) => {
       {
         _cardChoice = state.playerPacks[1][1].basicReplaceLand;
       } 
-      
+
       
 
       
