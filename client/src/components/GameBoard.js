@@ -303,6 +303,7 @@ const GameBoard = () => {
 }
 
 const GameMessageDiv = styled.div`
+pointer-events: none;
 position: absolute;
 font-size: 34px;
 top:55px;

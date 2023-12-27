@@ -2,8 +2,7 @@ import {styled,keyframes} from "styled-components"
 import { useContext, useEffect, useState } from "react";
 import { SketchPicker } from 'react-color'; 
 import { useRef } from 'react';
-import { useNavigate } from "react-router-dom";
-import {CARDFUNC} from "./game/cardfunctions.js";  
+import { useNavigate } from "react-router-dom"; 
 import { Link } from "react-router-dom";
 
 import { AppContext } from "./AppContext.js";

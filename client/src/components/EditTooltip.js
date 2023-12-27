@@ -42,7 +42,7 @@ const EditTooltip = () => {
                                 <p> <span style={{filter:"drop-shadow(1px 0 5px #000000) drop-shadow(-1px -1px 2px #000000)"}}>
                                     {handMouseOver.name}</span></p>
                         </DescDiv>
-                        <CardContain style={{backgroundColor:"rgba(0,0,0,0.45)",width:`${cardWidth*2}px`,height:`${cardHeight*2}px`,filter:"drop-shadow(1px 0 3px #ffffff) drop-shadow(-1px -1px 8px #000000)"}}>
+                        <CardContain style={{marginBottom:"7px",backgroundColor:"rgba(0,0,0,0.45)",width:`${cardWidth*1.75}px`,height:`${cardHeight*1.75}px`,filter:"drop-shadow(1px 0 3px #ffffff) drop-shadow(-1px -1px 8px #000000)"}}>
                             <BoardCard cardObj={handMouseOver} /> 
                         </CardContain> 
                         <DescDiv style={{fontSize:`${cardHeight/4}px`,filter:"drop-shadow(1px 0 3px #000000) drop-shadow(-1px -1px 8px #000000)"}}> 
@@ -70,7 +70,7 @@ const EditTooltip = () => {
                                     
                                 })}</>
                             )}
-                            <p>{handMouseOver.desc}</p>
+                            <DescPre>{handMouseOver.desc}</DescPre>
                             </DescDiv>
                     </PaddedDiv>)} 
                     </TooltipDiv> 
@@ -79,6 +79,12 @@ const EditTooltip = () => {
     )
 
 }
+
+const DescPre = styled.pre`
+    font-size: 20px;
+    font-family: epicslap;
+
+`
 
 
 const CardContain = styled.div`  

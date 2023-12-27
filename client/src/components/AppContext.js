@@ -44,6 +44,89 @@ for (let _i =0; _i < boardSize;_i++)
   const _targetGrid = emptyGrid.slice().map(_i=>_i.slice()); 
 
 
+
+  const makeCardDescription = (_card) =>{
+
+    let _tempDesc = `Requirements: \n`;
+
+    for (let _i = 0; _i < _card.requirements.length ; _i++)
+    {
+      console.log("bamboon");
+      let _miniDesc = "";
+      const _req = _card.requirements[_i];
+      switch (_req.type)
+      {
+        case "none":
+          _tempDesc = "";
+        break;
+        case "land types": 
+        _miniDesc += _req.values[2] + " ";
+        _miniDesc += _req.values[3] + " ";
+        _miniDesc += _req.values[1] + " ";
+        _miniDesc += "in " + _req.values[0] + ` \n`; 
+          break;
+        default: console.log("weird requirement type desc"); break;
+      }
+      _tempDesc += _miniDesc;
+    }
+    console.log("tempo desc",_tempDesc);
+
+     if (_tempDesc != "") { 
+      _tempDesc += " --- \n";}
+     
+    for (let _i = 0; _i < _card.effects.length ; _i++)
+    { 
+      let _miniDesc = "";
+      const _effect = _card.effects[_i]; 
+
+      switch (_effect.trigger.name)
+      {
+        case "every turn":
+          _miniDesc += "-every turn,-"+` \n`; 
+          break;
+
+        default: console.log("weird _effect type desc"); break;
+      }
+
+      for (let _j =0; _j < _effect.results.length; _j++)
+      { 
+          const _result = _effect.results[_j];
+          switch (_result.type)
+          {
+            case "addSun": _miniDesc += "+ ";  
+            if (_result.value[1] === "none")
+            {
+              _miniDesc += String(_result.value[4]) +" Sun"
+             }
+             else
+             {
+              _miniDesc += String(_result.value[0]) + " Sun"+ " per "; 
+             }
+            if (_result.value[1] === "land type")
+            {
+              _miniDesc += _result.value[3] +" "+ _result.value[2];
+            }  
+            if (_result.value[1] > 0)
+            { if (_miniDesc)
+              _miniDesc += String(_result.value[4]); } 
+              _miniDesc+= "\n";
+            break;
+
+            case "addMoon": _miniDesc += "+ "+""+" Moon \n"; break;
+            case "addStars": _miniDesc += "+ "+""+" Stars \n"; break;
+            default:console.log("weird _result type desc"); break;
+          }
+          
+      }
+      _tempDesc += _miniDesc;
+      _tempDesc += `--- \n`;
+    }
+
+    _card.desc = _tempDesc; 
+    return _tempDesc;
+  }
+
+
    
 
  const newEditCard = {
@@ -601,14 +684,10 @@ const reducer = (state, action) => {
         _tempCard.patterns.push({..._saveCard.patterns[_i],shapes:_shapey});
       } 
 
-      let _desc = "testing";
-
-      _tempCard.desc = _desc;
-
-
-
-
-
+      
+      ////set card description????? ? ??
+      makeCardDescription(_tempCard); 
+      state.currentEditCard.desc = _tempCard.desc;
 
 
 
